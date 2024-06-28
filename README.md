@@ -1,6 +1,7 @@
 ## Loads prompts from CSV files / Outputs to GitHub
 
 A Streamlit application that transforms text prompts in CSV files into storyboard images.
+
 <!--
 using the Replicate, Leonardo and other generative AI APIs. 
 -->
@@ -14,13 +15,13 @@ Enter a prompt or load prompts from a CSV file. Images are generated in differen
 - **Multiple Aspect Ratios**: Supports the creation of images in square and horizontal formats.
 - **GitHub Integration**: Automatically saves generated images to a specified GitHub repository.
 
-
 ## Upcoming To Do's
 
 - [Image Generation within Open WebUI](https://docs.openwebui.com/tutorial/images/)
 - [Open WebUI install with and without Docker](https://docs.openwebui.com/getting-started/) - [Our OpenWebUI install notes](../projects/src/)
 
 ### Add support for Midjourney's third-party APIs
+
 - [mymidjourney.ai](https://mymidjourney.ai/)
 - [imagineapi.dev](https://www.imagineapi.dev/pricing)
 
@@ -39,8 +40,18 @@ Enter a prompt or load prompts from a CSV file. Images are generated in differen
 1.) Clone the repository to your local computer.
 
 2.) Navigate to the directory, start a virtual env, and install the required packages:
-   
-   ```bash
+
+For windows:
+
+```
+python -m venv 
+env\Scripts\activat
+pip install -r requirements.txt
+```
+
+For mac:
+
+```bash
    python3 -m venv env && source env/bin/activate &&
    pip install -r requirements.txt
    ```
@@ -72,7 +83,6 @@ Or run the [original Streamlit app](https://github.com/tonykipkemboi/streamlit-r
 
       streamlit run streamlit_app.py
 
-
 8.) The Streamlit app should open automatically in your web browser at port 5 something.
 
 9.) Use the sidebar to select a prompt from the CSV file.
@@ -82,7 +92,6 @@ Or run the [original Streamlit app](https://github.com/tonykipkemboi/streamlit-r
 11.) View the generated images in different aspect ratios.
 
 12.) Check your GitHub repository for the saved images.
-
 
 ## Contributing
 
