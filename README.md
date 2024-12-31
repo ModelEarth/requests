@@ -17,8 +17,8 @@ Enter a prompt or load prompts from a CSV file. Images are generated in differen
 
 ## Upcoming To Do's
 
-- [Image Generation within Open WebUI](https://docs.openwebui.com/tutorial/images/)
-- [Open WebUI install with and without Docker](https://docs.openwebui.com/getting-started/) - [Our OpenWebUI install notes](../projects/src/)
+- [Image Generation within Open WebUI](https://docs.openwebui.com/tutorials/integrations/images/)
+- [Our OpenWebUI install notes](../projects/location/)
 
 ### Add support for Midjourney's third-party APIs
 - [mymidjourney.ai](https://mymidjourney.ai/)
