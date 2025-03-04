@@ -1,9 +1,10 @@
+We recommend [FloraFauna.ai](https://www.florafauna.ai/) for visual storyboard creation.
+
+# Requests Visualization
+
 ## Loads prompts from CSV files / Outputs to GitHub
 
-A Streamlit application that transforms text prompts in CSV files into storyboard images.
-<!--
-using the Replicate, Leonardo and other generative AI APIs. 
--->
+A Streamlit application that transforms text prompts in CSV files into storyboard images.  
 
 Enter a prompt or load prompts from a CSV file. Images are generated in different aspect ratios and can be saved directly to a GitHub repository for display in our [JQuery Gallery](https://model.earth/data-pipeline/research/stream/) or [React Gallery](https://model.earth/react-gallery/view/).
 
