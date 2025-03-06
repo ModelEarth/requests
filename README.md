@@ -16,15 +16,6 @@ Enter a prompt or load prompts from a CSV file. Images are generated in differen
 - **GitHub Integration**: Automatically saves generated images to a specified GitHub repository.
 
 
-## Upcoming To Do's
-
-- [Image Generation within Open WebUI](https://docs.openwebui.com/tutorials/integrations/images/)
-- [Our OpenWebUI install notes](../projects/location/)
-
-### Add support for Midjourney's third-party APIs
-- [mymidjourney.ai](https://mymidjourney.ai/)
-- [imagineapi.dev](https://www.imagineapi.dev/pricing)
-
 ## Getting Started
 
 ### Prerequisites
