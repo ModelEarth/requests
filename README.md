@@ -4,24 +4,28 @@
 
 # StoryBoard Input
 
-The following creates storyboard .csv files and pushes to GitHub. We're creating processes for sharing storyboards by exporting and importing files within collaborative workspaces. The following work is independent of FloraFauna.
+The following work is independent of FloraFauna.  The script creates storyboard .csv files and pushes them to GitHub.
+<!--
+We're creating processes for sharing storyboards by exporting and importing files within collaborative workspaces.
+-->
 
+## Loads prompts from .csv files and outputs to GitHub
 
-## Loads prompts from CSV files / Outputs to GitHub
+Enter a prompt or load prompts from a .csv file.
 
-A Streamlit application that transforms text prompts in CSV files into storyboard images.  
-
-Enter a prompt or load prompts from a CSV file. Images are generated in different aspect ratios and can be saved directly to a GitHub repository for display in our [JQuery Gallery](https://model.earth/data-pipeline/research/stream/) or [React Gallery](https://model.earth/react-gallery/view/).
+Images are generated in different aspect ratios and can be saved directly to a GitHub repository for display in our [JQuery Gallery](https://model.earth/data-pipeline/research/stream/) or [React Gallery](https://model.earth/react-gallery/view/).
 
 ### Features
 
-- **Prompt Selection**: Users can choose from a variety of predefined prompts listed in a CSV file.
+- **Prompt Selection**: Users can choose from a variety of predefined prompts listed in a .csv file.
 - **Image Generation**: The app generates images based on the selected prompt using the Replicate model.
 - **Multiple Aspect Ratios**: Supports the creation of images in square and horizontal formats.
 - **GitHub Integration**: Automatically saves generated images to a specified GitHub repository.
 
 
 ## Getting Started
+
+You'll be running a Streamlit app that transforms text prompts in .csv files into storyboard images.  
 
 ### Prerequisites
 
@@ -67,20 +71,20 @@ The GITHUB_REPOSITORY would be your own repo, in this format: [your account]/[yo
 You can get a free [Replicate API Token](https://replicate.com/docs/reference/http#authentication), but they are slow. [Purchased tokens](https://replicate.com/pricing) are affordable.
 Avoid pasting the "bearer" portion.
 
-6.) Update the CSV file with your prompts.
+6.) Update the .csv file with your prompts.
 
 7.) Run our .csv prompt input version:
 
       streamlit run code_gen_images_sq_wide_ME.py
 
-Or run the [original Streamlit app](https://github.com/tonykipkemboi/streamlit-replicate-img-app) (without CSV input, nor output to GitHub):
+Or run the [original Streamlit app](https://github.com/tonykipkemboi/streamlit-replicate-img-app) (without .csv input, nor output to GitHub):
 
       streamlit run streamlit_app.py
 
 
 8.) The Streamlit app should open automatically in your web browser at port 5 something.
 
-9.) Use the sidebar to select a prompt from the CSV file.
+9.) Use the sidebar to select a prompt from the .csv file.
 
 10.) Click on 'Generate Image' to start the image generation process.
 
