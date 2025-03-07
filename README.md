@@ -1,6 +1,11 @@
-We recommend [FloraFauna.ai](https://www.florafauna.ai/) for visual storyboard creation.
+[FloraFauna.ai](https://www.florafauna.ai/) provides an awesome visual storyboard creator:
 
-# Requests Visualization
+<a href="https://www.florafauna.ai/"><img src="img/FloraFaunaAPIs.jpg" style="width:100%; max-width:1200px"></a>
+
+# StoryBoard Input
+
+The following creates .csv files and pushes them to GitHub. We're creating processes for sharing storyboards by exporting and importing files within collaborative workspaces. The following work is independent of FloraFauna.
+
 
 ## Loads prompts from CSV files / Outputs to GitHub
 
