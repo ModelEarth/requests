@@ -1,8 +1,6 @@
 [FloraFauna.ai](https://www.florafauna.ai/) provides an awesome visual storyboard creator:
 
-<a href="https://www.florafauna.ai/"><img src="../requests/FloraFaunaAPIs.jpg" style="width:100%; max-width:1200px"></a>
-
-![Alt text](FloraFaunaAPIs.jpg)
+<a href="https://www.florafauna.ai/"><img src="http://dreamstudio.com/requests/FloraFaunaAPIs.jpg" style="width:100%; max-width:1200px"></a>
 
 # StoryBoard Input
 
