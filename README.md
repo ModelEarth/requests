@@ -2,6 +2,8 @@
 
 <a href="https://www.florafauna.ai/"><img src="../requests/FloraFaunaAPIs.jpg" style="width:100%; max-width:1200px"></a>
 
+![Alt text](FloraFaunaAPIs.jpg)
+
 # StoryBoard Input
 
 The following work is independent of FloraFauna.  The script creates storyboard .csv files and pushes them to GitHub.
