@@ -15,7 +15,7 @@ We're creating processes for sharing storyboards by exporting and importing file
 
 Enter a prompt or load prompts from a .csv file.
 
-Images are generated in different aspect ratios and can be saved directly to a GitHub repository for display in our [JQuery Gallery](https://model.earth/data-pipeline/research/stream/) or [React Gallery](https://model.earth/react-gallery/view/).
+Images are generated in different aspect ratios and can be saved directly to a GitHub repository for display in our [JQuery Gallery](../data-pipeline/research/stream) and [FeedPlayer](../feed).<!-- or [React Gallery](https://model.earth/react-gallery/view/)-->
 
 ### Features
 
