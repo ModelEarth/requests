@@ -1,6 +1,8 @@
 # Active Reader
 
-We're creating processes for importing and exporting files to storyboard  workspaces.  The following work is independent of FloraFauna's visual storyboard. It can be used to import and export prompts and files. The script creates .csv files using prompts based on location data and pushes the files to GitHub - which are then loaded into galleries via the Github API.
+We're creating processes for importing and exporting location-based storyboard files to collaborative workspaces.
+
+The following work is independent of FloraFauna's visual storyboard. It can be used to import and export prompts and files. The script creates .csv files using prompts based on location data and pushes the files to GitHub - which are then loaded into galleries via the Github API.
 
 We can increase reading by making it an active creative design and visualization process! &nbsp;The current page layout is designed to encourage reading by showing the gallery images adjacent to text.  Images are generated in different aspect ratios and can be saved directly to a GitHub repository for display in the fullpage [JQuery Gallery](gallery) and [FeedPlayer](../feed).<!-- or [React Gallery](https://model.earth/react-gallery/view/)  On narrow screen, the gallery appears above the text. -->
 
