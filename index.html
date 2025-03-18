@@ -87,13 +87,27 @@ loadMarkdown("stream.md", "streamDiv", "_parent");
 
 <div class="content contentpadding" style="padding-top:50px;max-width:1600px">
 
-  <!--
-  <img src="images/ME-Naics-7225-A-small-honey-bee-is-near-a_wide.jpg" alt="Streamlit Replicate Image App" style="width:100%;max-width:400px"><br><br>
-  -->
 <div id="readmeDiv"></div>
- 
-<div class="container">
 
+<div class="container" style="display:none">
+    <div class="left-column">
+         
+    </div>
+    <div class="right-column">
+        <!--
+        <img src="images/ME-Naics-7225-A-small-honey-bee-is-near-a_wide.jpg" alt="Streamlit Replicate Image App" style="width:100%;max-width:400px">
+        -->
+
+        <!-- iFrame height only works when set in surrounding div -->
+        <!--
+        <div style="width:100%; max-height:370px; overflow:hidden;">
+          <iframe src="../../planet/langchain"></iframe>
+        </div>
+        -->
+    </div>
+</div><br>
+
+<div class="container">
     <div class="left-column">
          <div id="streamDiv"></div>
     </div>
@@ -101,7 +115,6 @@ loadMarkdown("stream.md", "streamDiv", "_parent");
         <!-- Thumbnails dynamically inserted here -->
         <div class="gallery"></div>
     </div>
-
 </div>
 
 
