@@ -1,6 +1,6 @@
 # Storyboard file sharing for “Active Reader” layouts
 
-We can increase reading by making it an active creative design process! &nbsp;The current page layout is structured to encourage reading by showing the gallery images adjacent to text.  Images are saved directly to GitHub then pulled into the page side, fullpage [JQuery Gallery](gallery) and [FeedPlayer](../feed).<!-- or [React Gallery](https://model.earth/react-gallery/view/)  On narrow screen, the gallery appears above the text. Generated in different aspect ratios-->
+We can increase reading by making it an active creative design process. &nbsp;The current page layout is structured to encourage reading by showing the gallery images adjacent to text.  Images are saved directly to GitHub then pulled into the page side, fullpage [JQuery Gallery](gallery) and [FeedPlayer](../feed).<!-- or [React Gallery](https://model.earth/react-gallery/view/)  On narrow screen, the gallery appears above the text. Generated in different aspect ratios-->
 
 We're creating processes for importing and exporting location-based storyboard files to collaborative workspaces.
 
