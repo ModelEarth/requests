@@ -1,10 +1,8 @@
 # Storyboard file sharing for “Active Reader” layouts
 
-We're striving to increase reading rates for K-12 graders by creating layouts that encourage reading during creative story visualization processes. &nbsp;The current page layout is structured to encourage reading by showing prompted gallery images adjacent to text.  Images are saved directly to GitHub then pulled into the page side, fullpage [JQuery Gallery](gallery) and [FeedPlayer](../feed).<!-- or [React Gallery](https://model.earth/react-gallery/view/)  On narrow screen, the gallery appears above the text. Generated in different aspect ratios-->
+We love FloraFauna's visual editing tools. It would be cool to import and export prompt storyboards and related files. The following script creates .csv files using location data to create prompt. The resulting files are pushed to GitHub, from which they're loaded into the side gallery via the Github API.
 
-We're creating processes for importing and exporting location-based storyboard files to collaborative workspaces.
-
-The following works independently of FloraFauna's visual editing tools. It can be used to import and export prompts and files. The script creates .csv files using prompts based on location data and pushes the files to GitHub - from which they are loaded into galleries via the Github API.
+We're striving to increase reading rates for K-12 graders by creating layouts that encourage reading during creative story visualization processes. &nbsp;The current page layout is structured to encourage reading by showing prompted gallery images adjacent to text.  We also display with our [JQuery Gallery](gallery) and via our [FeedPlayer](../feed).<!-- or [React Gallery](https://model.earth/react-gallery/view/)  On narrow screen, the gallery appears above the text. Generated in different aspect ratios-->
 
 
 ## Loads prompts from .csv files and outputs to GitHub
