@@ -80,14 +80,3 @@ Or run the [original Streamlit app](https://github.com/tonykipkemboi/streamlit-r
 11.) View the generated images in different aspect ratios.
 
 12.) Check your GitHub repository for the saved images.
-
-
-## Contributing
-
-Contributions to improve this project are welcome. Please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch for your feature or fix.
-3. Commit your changes.
-4. Push to the branch.
-5. Open a pull request.
