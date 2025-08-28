@@ -45,6 +45,21 @@ loadMarkdown("stream.md", "streamDiv", "_parent");
             width: 100%;
         }
 
+        .right-column {
+          container-type: inline-size; /* enable container queries */
+        }
+        /* When the .right-column width is under 300px */
+        @container (max-width: 450px) {
+          #exploreOutput img {
+            max-height: 100px;
+          }
+        }
+        @container (max-width: 350px) {
+          #exploreOutput img {
+            max-height: 50px;
+          }
+        }
+
         /* For narrow screens */
         @media (max-width: 767px) {
             .container {
