@@ -1,77 +1,82 @@
-## Loads prompts from .csv files and outputs to GitHub
-
+Loads prompts from .csv files and outputs to GitHub
 Enter a prompt or load prompts from a .csv file.
 
+Features
+Prompt Selection: Users can choose from a variety of predefined prompts listed in a .csv file.
 
+Image Generation: The app generates images based on the selected prompt using the Replicate model.
 
-### Features
+Multiple Aspect Ratios: Supports the creation of images in square and horizontal formats.
 
-- **Prompt Selection**: Users can choose from a variety of predefined prompts listed in a .csv file.
-- **Image Generation**: The app generates images based on the selected prompt using the Replicate model.
-- **Multiple Aspect Ratios**: Supports the creation of images in square and horizontal formats.
-- **GitHub Integration**: Automatically saves generated images to a specified GitHub repository.
+GitHub Integration: Automatically saves generated images to a specified GitHub repository.
 
+Getting Started
+You'll be running a Streamlit app that transforms text prompts in .csv files into storyboard images.
 
-## Getting Started
+Prerequisites
+Streamlit
 
-You'll be running a Streamlit app that transforms text prompts in .csv files into storyboard images.  
+Pandas
 
-### Prerequisites
+Replicate Python Client
 
-- Streamlit
-- Pandas
-- Replicate Python Client
-- Python Requests
-- Pillow (PIL)
+Python Requests
 
-### Installation
+Pillow (PIL)
 
+Installation
 1.) Clone the repository to your local computer.
 
 2.) Navigate to the directory, start a virtual env, and install the required packages:
-   
-   For mac:
 
-   ```bash
-   python3 -m venv env && 
-   source env/bin/activate &&
-   pip install -r requirements.txt
-   ```
-   For windows:
-```bash
-   python3 -m venv env && 
-   env\Scripts\activate &&
-   pip install -r requirements.txt
-   ```
-3.) Save a copy of example_secrets.toml as secrets.toml
+For mac:
 
-4.) If you will be sending files to your GitHub account, in .streamlit/secrets.toml add:
+bash
+python3 -m venv env && 
+source env/bin/activate &&
+pip install -r requirements.txt
+For windows (PowerShell):
 
-GITHUB\_TOKEN
-GITHUB\_REPOSITORY
+bash
+python -m venv env
+.\env\Scripts\activate
+pip install -r requirements.txt
+(Note: If python is not found, try py or ensure Python is added to your PATH.)
 
-To create a GITHUB_TOKEN, in GitHub.com go to: Settings -> Developer Settings -> [Personal access tokens](https://github.com/settings/tokens).  
-Checking the first three checkboxes should suffice: repo, workflow and write:packages
+3.) Set up your secrets file:
 
-The GITHUB_REPOSITORY would be your own repo, in this format: [your account]/[your repo]
+Create a folder named .streamlit in the root directory (e.g., requests/.streamlit).
+Copy the content of example_secrets.toml into a new file named secrets.toml inside that folder.
 
-5.) Set your Replicate API Token in .streamlit/secrets.toml. 
+4.) Configure GitHub integration:
 
-You can get a free [Replicate API Token](https://replicate.com/docs/reference/http#authentication), but they are slow. [Purchased tokens](https://replicate.com/pricing) are affordable.
-Avoid pasting the "bearer" portion.
+In .streamlit/secrets.toml, update the following keys:
+
+GITHUB_TOKEN: Create a classic token at GitHub Settings -> Developer Settings -> Personal access tokens. Select the repo (Full control) and workflow scopes.
+
+GITHUB_REPOSITORY: Your fork, in the format your-username/requests.
+
+5.) Configure Replicate API:
+
+Update REPLICATE_API_TOKEN in .streamlit/secrets.toml.
+
+Get a token from Replicate API Tokens.
+
+Ensure the REPLICATE_MODEL_ENDPOINTSTABILITY key from the example file is also present in your secrets.
+
+Note: Free accounts may receive "Insufficient Credit" errors (Status 402) for certain models. You can add a credit card to resolve this.
 
 6.) Update the .csv file with your prompts.
 
 7.) Run our .csv prompt input version:
 
-      streamlit run code_gen_images_sq_wide_ME.py
+text
+  streamlit run code_gen_images_sq_wide_ME.py
+Or run the original Streamlit app (without .csv input, nor output to GitHub):
 
-Or run the [original Streamlit app](https://github.com/tonykipkemboi/streamlit-replicate-img-app) (without .csv input, nor output to GitHub):
-
-      streamlit run streamlit_app.py
-
-
-8.) The Streamlit app should open automatically in your web browser at port 5 something.
+text
+  streamlit run streamlit_app.py
+8.) The Streamlit app should open automatically in your web browser at port 8501 (usually).
 
 9.) Use the sidebar to select a prompt from the .csv file.
 
