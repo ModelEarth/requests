@@ -1,63 +1,104 @@
-# Plan: Migrate Storyboard Generator to Rust (X.ai / Grok)
+# “Arts Engine” with X.ai Rust API
 
 ## Meta-Instruction for AI Agents
-When this plan is run, and followed by subsequent prompts that adjust the results, update this plan to include those adjustments clearly by adding revisions within the plan rather than simply appending to the end.
+When this plan is run, update it because we'll run it again with the guidance your figure out each time. As we make subsequent prompts to adjust the results, update the plan with those adjustments within the plan, rather than simply appending to the end.
+
+## Progress Checkboxes
+
+Tracks Code CLI progress in case you get interupted:
+
+[Add and update progress checkboxes here]
+
+## Guidance and Rust API References
+
+File paths start from the webroot folder.
+
+AGENTS.md
+localsite/AGENTS.md - JamStack UI
+team/AGENTS.md - Existing Rust backend
+
+X.ai API Docs, including Rust
+https://docs.rs/api_xai/latest/api_xai/
 
 ## Objective
-Develop a high-performance image and text generation tool using the **X.ai (Grok) API** via a Rust backend. The application will serve a static frontend from the existing `team` repository (`webroot`), removing the dependency on Streamlit. Future support for OpenAI and Claude will be architected from the start.
+
+Implement comprehensive Rust client for X.AI’s Grok API provided by:
+https://docs.rs/api_xai/latest/api_xai/
+
+Develop a high-performance text, image and video generation tool using the **X.ai (Grok) API** via a Rust backend. The application will serve a JamStack static frontend "requests" repository in either a "requests/codex" or "requests/claude" subfolder based on the current CLI. 
+
+IMPORTANT: Start by copying the PLAN.md file in your "requests/codex" or "requests/claude" subfolder since the other CLI will be organizing its own updates in a copy of the PLAN.md file too. Include your start time, end time and total time in the copied PLAN.md file. Update the copied file as you proceed and whenever you resume.
+
+In your subfolder, add the following index.html starter:
+
+https://raw.githubusercontent.com/ModelEarth/localsite/refs/heads/main/start/template/index.html
+
+
+## Loads prompts from textbox, .csv files and outputs to GitHub
+
+Enter a prompt or load prompts from a .csv file.
+
+### Features
+
+- **Prompt Selection**: Users can choose from a variety of predefined prompts listed in a .csv file.
+- **Image/Video Generation**: The app generates images and videos in storyboard sequences based on the selected prompts
+- **Multiple Aspect Ratios**: Supports the creation of image rations and 5 default formats: square, 2 horizontal and 2 verticle. 
+- Saves seleceted format and other choices to browser cacher
+
+## Storyboard Flowcharts
+
+Flowcharts in the style of FloraFauna and ComfyUI provide editors with scene overviews. We're automating prompts for scene flow based on local industry levels and related factors.
+
+Ggalleries will also reside to the right of reading material on 1/3 of the screen to provide processes aimed at increasing reading rates for K-12 graders - during visual story generation.  The current page layout is structured to display prompted gallery images adjacent to related text. We also display output within our JQuery Gallery and via our FeedPlayer.
+
+All intefaces are modern and responsive for mobile, with .dark mode css styles invoked by the existing localsite navigation settings.
 
 ## Architecture
 
-### 1. Frontend (Static)
-- **Repo**: `requests`
-- **Path**: Served via `webroot` at `http://localhost:8887/requests/`
-- **Tech**: HTML, CSS, Vanilla JavaScript.
-- **Key Features**:
-  - Prompt input and CSV upload.
-  - "Arts Engine" widget to securely save the user's GitHub Token.
-  - Image/Text display area.
+### Frontend (Static)
+- **Repo**: `requests` and other repos (submodules) in the webroot.
+- **Path**: Served via `webroot` at `http://localhost:8887/requests/[claude or codex]`
+- **Tech**: HTML, CSS, JavaScript, Rust backend with X.ai (Grok) API
 
-### 2. Backend (Rust)
-- **Repo**: `team`
-- **Tech**: Rust (Actix-Web).
-- **Primary API**: **X.ai (Grok)**.
-- **Secondary Support**: Architecture will support OpenAI and Anthropic (Claude) via trait-based design.
+- **Key Features**:
+
+  - Inputs from both prompt and multiple files to provide csv and images to LLM APIs, similar to Google NotebookLM.
+
+  - The team/js/map.js process used in http://localhost:8887/team/projects/map/#show=liaisons&id=5 will be updated for continuing use in both its existing "team" (team/projects/map) interface, and in the new "requests" interface. The display of details in #locationDetails provides a reusable image gallery, and the existing #detailmap map where LLM responses that include locations can be displayed with mappoints and a list that appears after #locationDetails in the existing team/js/map.js widget.
+
+  - Results sent to user's designated repo using their cached GitHub Token for auth, with the token saved by reusing the existing interface from projects/js/issues.js
+
+    <!-- Arts Engine / GitHub Token Widget Inclusion -->
+    <link rel="stylesheet" href="/projects/css/issues.css">
+    <script src="/projects/js/issues.js"></script>
+
+    <!-- The widget will render here. We will set the title to "Arts Engine" via JS or config -->
+    <div id="issues-root"></div>
+
+## Backend
+
+Where possible, integerate existing Rust processes from the team repo (submodule). If changes to the team repo Rust would be significant, use Rust setup from api_xai sample independently in the "requests" repo.
+
+Findings and recommendations on integration with team repo Rust:
+
+Multiple LLMs - Include structure for future integration of OpenAI, Gemini and Claude APIs using existing settings from the existing docker/.env file and trait-based design [explain that here].
+
 - **Endpoints**:
-  - `POST /api/generate`: Handles requests to X.ai/Grok.
-  - `POST /api/github/push`: Handles saving generated content to the user's GitHub repo.
+
+[Add endpoints here]
+
 
 ## Implementation Steps
 
-### Step 1: Rust Backend (X.ai Integration)
-- **Dependencies**: Add `xai-sdk` (or `reqwest` for direct API calls if SDK is immature) to `team/Cargo.toml`.
-- **API Client**: Implement a modular client in `src/api/ai_client.rs`.
-  - **Interface**: Create a `GenerativeModel` trait to allow easy swapping between X.ai, OpenAI, and Claude.
-  - **X.ai Implementation**: Use the X.ai API key from environment variables to authenticate and send prompt requests.
-- **Routes**: Add handlers in `src/main.rs` to process frontend requests and forward them to the X.ai client.
+### Rust Backend (X.ai Integration)
+- **API Client**: Implement a modular client
+  - **Interface**: Create a `GenerativeModel` trait to allow easy swapping between X.ai, OpenAI, Gemini, and Claude.
+  - **X.ai Implementation**: Use API keys stored in docker/.env to authenticate and send prompt requests. The docker repo already resides in the webroot. Update docker/.env.example with keys for secret values. 
+- **Routes**: Add handlers to process frontend requests and forward them to the X.ai client using Rust.
 
-### Step 2: Frontend & "Arts Engine" Widget
-- **GitHub Token Widget**: Embed the "Arts Engine" token manager in `requests/index.html` to allow users to save their credentials for direct repo pushing.
 
-        <!-- Arts Engine / GitHub Token Widget -->
-        <link rel="stylesheet" href="/projects/css/issues.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
-        <script src="/projects/js/issues.js"></script>
-
-        <!-- The widget will render here. We will set the title to "Arts Engine" via JS or config -->
-        <div id="issues-root"></div>
-        <script>
-            // Configuration to set title to "Arts Engine"
-            // (Implementation detail: Check issues.js for title variable override)
-        </script>
-
-### Step 3: Deployment & Workflow
-- **Webroot**: Ensure the `team` server maps the `requests` folder to `/requests`.
-- **Testing**:
+### Usage Tests
   1. User enters prompt in static UI.
   2. Rust backend sends prompt to X.ai (Grok).
   3. Grok returns content.
-  4. App uses the stored GitHub Token to push the result to the user's repo.
-
-## References
-- **X.ai API Docs**: [https://docs.rs/api_xai/latest/api_xai/](https://docs.rs/api_xai/latest/api_xai/)
-- **GitHub Token Setup**: [http://localhost:8887/localsite/start/steps/github-token/](http://localhost:8887/localsite/start/steps/github-token/)
+  4. App uses the stored GitHub Token to push the result to the user's repo based on user interaction.

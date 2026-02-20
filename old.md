@@ -5,11 +5,13 @@ Enter a prompt or load prompts from a .csv file.
 ### Features
 
 - **Prompt Selection**: Users can choose from a variety of predefined prompts listed in a .csv file.
-- **Image Generation**: The app generates images based on the selected prompt using the Replicate model.
+- **Image/Video Generation**: The app generates images based on the selected prompts
 - **Multiple Aspect Ratios**: Supports the creation of images in square and horizontal formats.
 - **GitHub Integration**: Automatically saves generated images to a specified GitHub repository.
 
 ## Getting Started
+
+The rest is older dooumentation from a Streamlit version.
 
 You'll be running a Streamlit app that transforms text prompts in .csv files into storyboard images.
 
@@ -75,3 +77,6 @@ You'll be running a Streamlit app that transforms text prompts in .csv files int
 11.) View the generated images in different aspect ratios.
 
 12.) Check your GitHub repository for the saved images.
+
+
+<a href="https://github.com/modelearth/requests/">Our Requests Repo</a> extends dev by DreamStudio Earth contributor <a href="https://github.com/mannurkishorreddy">Kishor Reddy</a> at <a href="https://github.com/mannurkishorreddy/streamlit-replicate-img-app">streamlit-replicate-img-app</a>
