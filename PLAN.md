@@ -1,5 +1,8 @@
 # Plan: Migrate Storyboard Generator to Rust (X.ai / Grok)
 
+## Meta-Instruction for AI Agents
+When this plan is run, and followed by subsequent prompts that adjust the results, update this plan to include those adjustments clearly by adding revisions within the plan rather than simply appending to the end.
+
 ## Objective
 Develop a high-performance image and text generation tool using the **X.ai (Grok) API** via a Rust backend. The application will serve a static frontend from the existing `team` repository (`webroot`), removing the dependency on Streamlit. Future support for OpenAI and Claude will be architected from the start.
 
@@ -35,32 +38,26 @@ Develop a high-performance image and text generation tool using the **X.ai (Grok
 ### Step 2: Frontend & "Arts Engine" Widget
 - **GitHub Token Widget**: Embed the "Arts Engine" token manager in `requests/index.html` to allow users to save their credentials for direct repo pushing.
 
-```html
-<!-- Arts Engine / GitHub Token Widget -->
-<link rel="stylesheet" href="/projects/css/issues.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
-<script src="/projects/js/issues.js"></script>
+        <!-- Arts Engine / GitHub Token Widget -->
+        <link rel="stylesheet" href="/projects/css/issues.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css">
+        <script src="/projects/js/issues.js"></script>
 
-<!-- The widget will render here. We will set the title to "Arts Engine" via JS or config -->
-<div id="issues-root"></div>
-<script>
-    // Configuration to set title to "Arts Engine"
-    // (Implementation detail: Check issues.js for title variable override)
-</script>
-Step 3: Deployment & Workflow
-Webroot: Ensure the team server maps the requests folder to /requests.
+        <!-- The widget will render here. We will set the title to "Arts Engine" via JS or config -->
+        <div id="issues-root"></div>
+        <script>
+            // Configuration to set title to "Arts Engine"
+            // (Implementation detail: Check issues.js for title variable override)
+        </script>
 
-Testing:
+### Step 3: Deployment & Workflow
+- **Webroot**: Ensure the `team` server maps the `requests` folder to `/requests`.
+- **Testing**:
+  1. User enters prompt in static UI.
+  2. Rust backend sends prompt to X.ai (Grok).
+  3. Grok returns content.
+  4. App uses the stored GitHub Token to push the result to the user's repo.
 
-User enters prompt in static UI.
-
-Rust backend sends prompt to X.ai (Grok).
-
-Grok returns content.
-
-App uses the stored GitHub Token to push the result to the user's repo.
-
-References
-X.ai API Docs: https://docs.rs/api_xai/latest/api_xai/
-
-GitHub Token Setup: http://localhost:8887/localsite/start/steps/github-token/
+## References
+- **X.ai API Docs**: [https://docs.rs/api_xai/latest/api_xai/](https://docs.rs/api_xai/latest/api_xai/)
+- **GitHub Token Setup**: [http://localhost:8887/localsite/start/steps/github-token/](http://localhost:8887/localsite/start/steps/github-token/)
