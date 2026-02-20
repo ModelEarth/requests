@@ -4,7 +4,7 @@ The "engine" folder contains a high-performance text, image, and video generatio
 
 ---
 
-## AI Agent - Art Engine Experiments
+## AI Agent - Arts Engine Experiments
 
 [your-agent-name]-beta is the current CLI name plus -beta: claude-beta, openai-beta, gemini-beta, etc
 
@@ -16,7 +16,7 @@ The "engine" folder contains a high-performance text, image, and video generatio
    ```
    The template provides: `index.html`, `css/app.css`, `js/app.js`, `config.yaml`
 
-3. **Do not place Rust files at the `requests/` root.** Your Rust backend lives entirely inside your subfolder at `[your-agent-name]/rust-api/`.
+3. **Do not place Rust files at the `requests/` root.** Your Rust backend lives entirely inside your subfolder at `[your-agent-name]-beta/rust-api/`.
 
 4. **Update your PLAN.md copy** as you build — fill in checkboxes, add endpoint details, record findings. When prompted to resume, re-read your copy first.
 
