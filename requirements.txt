@@ -1,5 +1,0 @@
-replicate
-streamlit==1.30.0
-requests
-pandas
-streamlit-image-select

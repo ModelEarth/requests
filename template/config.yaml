@@ -1,0 +1,9 @@
+# Arts Engine — shared UI configuration
+# Loaded at startup by index.html via fetch()
+# Create a local config.yaml in your agent subfolder (e.g. claude/config.yaml)
+# to override these defaults without editing the shared template.
+
+title: "Arts Engine"
+subtitle: "Image & text generation via X.ai Grok API · Storyboard Builder"
+icon: "auto_awesome"
+api_base: "http://localhost:8091"
