@@ -1,0 +1,1 @@
+Follow requests/PLAN.md and start with creation of requests/codex subfolder for your copy of the PLAN.md to edit going forward as you build the new app. Continue until complete without input or approvals from user. Pre-ask for any needed approvals early since the user will not be available later.
