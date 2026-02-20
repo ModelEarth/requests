@@ -182,7 +182,7 @@ param.showsearch = "false";
       <!-- Output Type + Generate -->
       <div class="ae-panel">
         <h3>Output</h3>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;justify-content:space-between">
 
           <div class="ae-type-row">
             <button class="ae-type-btn active" data-type="image">
@@ -193,16 +193,15 @@ param.showsearch = "false";
               <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">text_fields</span>
               Text
             </button>
-            <button class="ae-type-btn disabled" data-type="video"
-              title="Video generation — available when X.ai releases a public video model">
+            <button class="ae-type-btn" data-type="video">
               <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">videocam</span>
-              Video <small style="font-size:0.7em">(soon)</small>
+              Video
             </button>
           </div>
 
-          <div class="ae-variations-row">
+          <div class="ae-variations-row" style="margin-top:0;align-self:center">
             <label for="variationsInput">Variations:</label>
-            <input type="number" id="variationsInput" min="1" max="4" value="1">
+            <input type="number" id="variationsInput" min="1" max="4" value="2">
           </div>
 
           <!-- Model selector (hidden when outputType=image) -->
@@ -331,7 +330,6 @@ param.showsearch = "false";
         <ul style="margin:0;padding-left:16px;color:#888;line-height:1.9">
           <li><a href="https://docs.x.ai/docs" target="_blank">X.ai API Docs</a></li>
           <li><a href="https://docs.rs/api_xai/latest/api_xai/" target="_blank">api_xai Rust crate</a></li>
-          <li><a href="https://www.florafauna.ai" target="_blank">FloraFauna.ai</a> — storyboard reference</li>
           <li><a href="https://github.com/ModelEarth/requests" target="_blank">requests repo</a></li>
         </ul>
       </div>
@@ -340,7 +338,10 @@ param.showsearch = "false";
 
   </div><!-- /ae-container -->
 
-  <br><br>
+
+  <script type="text/javascript" src="../../localsite/js/embed.js?showindex=1&showheader=true"></script>
+  <div id="listwidget"></div>
+
 </div><!-- /content -->
 
 <!-- Lightbox overlay (full-screen image view, Escape or click outside to close) -->
