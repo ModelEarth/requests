@@ -10,6 +10,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" id="/localsite/js/jquery.min.js"></script>
 <link type="text/css" rel="stylesheet" href="/localsite/css/base.css" id="/localsite/css/base.css" />
 <script type="text/javascript" src="/localsite/js/localsite.js?showheader=true"></script>
+<!-- for right side gallery -->
 <script type="text/javascript" src="/localsite/js/explore.js" id="/localsite/js/explore.js"></script>
 <script>
 loadMarkdown("README.md", "readmeDiv", "_parent");
@@ -116,7 +117,7 @@ loadMarkdown("PLAN.md", "planDiv", "_parent");
 
             <a href="https://www.florafauna.ai/"><img src="https://dreamstudio.com/requests/img/FloraFaunaAPIs.jpg" style="width:100%; min-width:300px; max-width:800px"></a><br>
             Image source: <a href="https://www.florafauna.ai">FloraFauna.ai</a>
-            <br>
+            <br><br>
       </div>
       <div class="right-column">
           <!--
@@ -138,32 +139,32 @@ loadMarkdown("PLAN.md", "planDiv", "_parent");
   </div>
 </div><br>
 
-<div class="content contentpadding" style="padding-top:20px;max-width:100vw">
+<div class="content contentpadding" style="padding-top:20px;">
 
-<div class="container">
-    <div class="left-column">
-         <div id="streamDiv"></div>
-         <div id="readmeDiv"></div>
-    </div>
-    <div class="right-column">
-        <!-- Thumbnails dynamically inserted here -->
-        <div id="exploreOutput"></div>
-        <script>
-            $(document).ready(function() {
-                if(typeof param=='undefined'){ var param={}; }
-                param.owner = 'modelearth'; // owner_username
-                param.repo = 'requests'; // repository_name
-                param.branch = 'main'; // or whichever branch you want to access
-                param.entirerepo = true;
-                exploreFiles(param); // Resides in localsite/js/explore.js
-            });
-        </script>
-    </div>
+    View the <a href="template">Frontend template by Claude Code</a>. Backend structure largely created by OpenAI Codex.<br><br>
+
     <div id="planDiv"></div>
-</div>
 
-<br><hr>
-
+    <div class="container">
+        <div class="left-column">
+             <div id="streamDiv"></div>
+             <div id="readmeDiv"></div>
+        </div>
+        <div class="right-column">
+            <!-- Thumbnails dynamically inserted here -->
+            <div id="exploreOutput"></div>
+            <script>
+                $(document).ready(function() {
+                    if(typeof param=='undefined'){ var param={}; }
+                    param.owner = 'modelearth'; // owner_username
+                    param.repo = 'requests'; // repository_name
+                    param.branch = 'main'; // or whichever branch you want to access
+                    param.entirerepo = true;
+                    exploreFiles(param); // Resides in localsite/js/explore.js
+                });
+            </script>
+        </div>
+    </div>
 
 </div>
 
