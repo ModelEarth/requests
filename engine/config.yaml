@@ -1,0 +1,8 @@
+# Arts Engine — Claude agent configuration
+# Local override of requests/template/config.yaml
+# api_base uses ARTS_ENGINE_PORT=8082 from docker/.env.example
+
+title: "Arts Engine"
+subtitle: "Image & text generation via X.ai Grok API · Storyboard Builder"
+icon: "auto_awesome"
+api_base: "http://localhost:8082"
