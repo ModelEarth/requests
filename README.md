@@ -1,11 +1,3 @@
-# Image/Video Generation
-
-[FloraFauna.ai](https://www.florafauna.ai/) provides a visual storyboard creator with the following generative AI models:
-
-[![FloraFauna.ai](https://model.earth/requests/img/FloraFaunaAPIs.jpg)](https://www.florafauna.ai/)
-
-[Our Requests Repo](https://github.com/modelearth/requests/) extends dev by DreamStudio Earth contributor [Kishor Reddy](https://github.com/mannurkishorreddy) at [streamlit-replicate-img-app](https://github.com/mannurkishorreddy/streamlit-replicate-img-app)
-
 ## Loads prompts from .csv files and outputs to GitHub
 
 Enter a prompt or load prompts from a .csv file.
@@ -83,3 +75,5 @@ You'll be running a Streamlit app that transforms text prompts in .csv files int
 11.) View the generated images in different aspect ratios.
 
 12.) Check your GitHub repository for the saved images.
+
+[Our Requests Repo](https://github.com/modelearth/requests/) extends dev by DreamStudio Earth contributor [Kishor Reddy](https://github.com/mannurkishorreddy) at [streamlit-replicate-img-app](https://github.com/mannurkishorreddy/streamlit-replicate-img-app)
