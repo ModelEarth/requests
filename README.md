@@ -75,5 +75,3 @@ You'll be running a Streamlit app that transforms text prompts in .csv files int
 11.) View the generated images in different aspect ratios.
 
 12.) Check your GitHub repository for the saved images.
-
-[Our Requests Repo](https://github.com/modelearth/requests/) extends dev by DreamStudio Earth contributor [Kishor Reddy](https://github.com/mannurkishorreddy) at [streamlit-replicate-img-app](https://github.com/mannurkishorreddy/streamlit-replicate-img-app)
