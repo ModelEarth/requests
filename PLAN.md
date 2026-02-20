@@ -1,7 +1,16 @@
 # “Arts Engine” with X.ai Rust API
 
+Develop a high-performance text, image and video generation tool using the **X.ai (Grok) API** via a Rust backend. The application will serve a JamStack static frontend from either "requests/codex" or "requests/claude" subfolder based on the current CLI. 
+
 ## Meta-Instruction for AI Agents
-When this plan is run, update it because we'll run it again with the guidance your figure out each time. As we make subsequent prompts to adjust the results, update the plan with those adjustments within the plan, rather than simply appending to the end.
+
+Start by copying the requests/PLAN.md file to your own "requests/codex" or "requests/claude" subfolder since the other CLI will be organizing its own updates in a copy of the PLAN.md file too. Include your start time, end time and total time in the copied PLAN.md file. Update the copied file as you proceed and whenever you resume.
+
+In your subfolder, add the following index.html starter:
+
+https://raw.githubusercontent.com/ModelEarth/localsite/refs/heads/main/start/template/index.html
+
+Update the plan copy as you figure out details and make progress, and when prompted to make updates after the app is generated. We will run the copied plan again using your adjusted details in the copy. Intergrate specs into the copied plan's text.
 
 ## Progress Checkboxes
 
@@ -25,13 +34,6 @@ https://docs.rs/api_xai/latest/api_xai/
 Implement comprehensive Rust client for X.AI’s Grok API provided by:
 https://docs.rs/api_xai/latest/api_xai/
 
-Develop a high-performance text, image and video generation tool using the **X.ai (Grok) API** via a Rust backend. The application will serve a JamStack static frontend "requests" repository in either a "requests/codex" or "requests/claude" subfolder based on the current CLI. 
-
-IMPORTANT: Start by copying the PLAN.md file in your "requests/codex" or "requests/claude" subfolder since the other CLI will be organizing its own updates in a copy of the PLAN.md file too. Include your start time, end time and total time in the copied PLAN.md file. Update the copied file as you proceed and whenever you resume.
-
-In your subfolder, add the following index.html starter:
-
-https://raw.githubusercontent.com/ModelEarth/localsite/refs/heads/main/start/template/index.html
 
 
 ## Loads prompts from textbox, .csv files and outputs to GitHub
