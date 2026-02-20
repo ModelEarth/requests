@@ -1,18 +1,18 @@
 # "Arts Engine" with X.ai Rust API
 
-Develop a high-performance text, image, and video generation tool using the **X.ai (Grok) API** via a standalone Rust backend. The application serves a JamStack static frontend from either the `requests/codex` or `requests/claude` subfolder depending on which CLI is building it.
+The "engine" folder contains a high-performance text, image, and video generation tool using the **X.ai (Grok) API** via a standalone Rust backend. The application serves a JamStack static frontend from the `requests/engine` subfolder.
 
 ---
 
-## AI Agent Folders
+## AI Agent - Art Engine Experiments
 
-[your-agent-name] is the current CLI name: claude, codex, gemini, etc
+[your-agent-name]-beta is the current CLI name plus -beta: claude-beta, openai-beta, gemini-beta, etc
 
-1. **Copy this plan file** to your own subfolder — `requests/[your-agent-name]/PLAN.md` — and work from that copy going forward. Record your start time, end time, and total time in the copy.
+1. **Copy this plan file** to your own beta folder — `requests/[your-agent-name]-beta/PLAN.md` — and work from that copy going forward. Record your start data and time, end data and time, and total time in the copy.
 
-2. **Copy the template** — copy all files from `requests/template/` into your agent subfolder as your starting point:
+2. **Copy engine folder** — copy all files from `requests/engine/` into your beta folder as your starting point.
    ```
-   cp -r requests/template/* requests/[your-agent-name]/
+   cp -r requests/engine/* requests/[your-agent-name]-beta/
    ```
    The template provides: `index.html`, `css/app.css`, `js/app.js`, `config.yaml`
 
@@ -51,7 +51,7 @@ Track progress in your copy in case of interruption:
 
 ## File Hierarchy (within your agent subfolder)
 
-All paths below are relative to your agent subfolder (e.g. `requests/claude/`):
+All paths below are relative to your agent subfolder (e.g. `requests/engine/`):
 
 ```
 index.html                        ← from template; loads config.yaml, css/app.css, js/app.js
@@ -95,7 +95,7 @@ The `index.html` tries `./config.yaml` first (agent-local), then `/requests/temp
 
 ## Frontend UX Guide
 
-The Claude build's frontend was judged significantly better than the Codex build's. The following design patterns produced that result. Future agents should follow them closely.
+The build's frontend uses the following design patterns. Future agents should follow them closely.
 
 ### Overall Layout
 
@@ -274,7 +274,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 ### `src/config.rs` — AppConfig
 
-Fields: `server_host`, `server_port` (default 8091), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_base_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `claude_api_key: Option<String>`.
+Fields: `server_host`, `server_port` (default 8091), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_api_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `claude_api_key: Option<String>`.
 
 **Multi-path `.env` discovery** — try each candidate in order, stop at first found:
 ```rust
@@ -287,8 +287,8 @@ for path in candidates {
 
 Model defaults (all overridable via env):
 - `XAI_TEXT_MODEL` → `"grok-3-mini-beta"`
-- `XAI_IMAGE_MODEL` → `"grok-2-image"`
-- `XAI_VIDEO_MODEL` → `"grok-2-video"`
+- `XAI_IMAGE_MODEL` → `"grok-imagine-image"`
+- `XAI_VIDEO_MODEL` → `"grok-imagine-video"`
 
 ### `src/error.rs` — Error handling
 
@@ -367,7 +367,7 @@ let payload = json!({
 });
 ```
 
-**Video generation** — use `reqwest`, POST to `/video/generations`. Video is **async** — the response contains a job `id`. Provide a separate `video_status(id)` handler that GETs `/video/generations/{id}`.
+**Video generation** — use `reqwest`, POST to `/videos/generations`. Video is **async** — the response contains a job `id`. Provide a separate `video_status(id)` handler that GETs `/videos/generations/{id}`.
 
 **`extract_media_urls`** — recursively walk the raw JSON response and collect all `https://` strings. This works for both image and video responses regardless of their exact shape:
 ```rust
@@ -410,10 +410,10 @@ Router::new()
 | `/v1/chat/completions` | POST | Text — use via api_xai crate |
 | `/v1/models` | GET | Model list — use via api_xai crate |
 | `/v1/images/generations` | POST | Image — use reqwest, pass `aspect_ratio` as string |
-| `/v1/video/generations` | POST | Video — async, returns job `id` |
-| `/v1/video/generations/{id}` | GET | Poll video job status |
+| `/v1/videos/generations` | POST | Video — async, returns job `id` |
+| `/v1/videos/generations/{id}` | GET | Poll video job status |
 
-Base URL: `https://api.x.ai/v1` (override with `XAI_BASE_URL` in `.env`)
+Base URL: `https://api.x.ai/v1` (override with `XAI_API_URL` in `.env`)
 
 ### Environment Variables
 
@@ -421,10 +421,10 @@ Add to `docker/.env` (webroot-level, shared across all tools):
 
 ```bash
 XAI_API_KEY=your-key-from-console.x.ai
-XAI_BASE_URL=https://api.x.ai/v1
+XAI_API_URL=https://api.x.ai/v1
 XAI_TEXT_MODEL=grok-3-mini-beta
-XAI_IMAGE_MODEL=grok-2-image
-XAI_VIDEO_MODEL=grok-2-video
+XAI_IMAGE_MODEL=grok-imagine-image
+XAI_VIDEO_MODEL=grok-imagine-video
 GEN_MODEL_PROVIDER=xai           # switch to openai/gemini/claude when stubs are implemented
 SERVER_PORT=8091                  # arts engine API port (separate from any other API on 8081)
 ```
