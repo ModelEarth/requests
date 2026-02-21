@@ -337,11 +337,18 @@ param.showsearch = "false";
           <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">info</span>
           API Reference
         </h3>
-        <ul style="margin:0;padding-left:16px;color:#888;line-height:1.9">
+        <ul style="margin:0;margin-bottom:10px;padding-left:16px;color:#888;line-height:1.9">
           <li><a href="https://docs.x.ai/docs" target="_blank">X.ai API Docs</a></li>
           <li><a href="https://docs.rs/api_xai/latest/api_xai/" target="_blank">api_xai Rust crate</a></li>
           <li><a href="https://github.com/ModelEarth/requests" target="_blank">requests repo</a></li>
         </ul>
+
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+          <a href="agents" class="btn btn-nice">My Agents</a>
+          <a href="#" id="toggleAgentsEditor" class="btn btn-nice">Edit Agents</a>
+        </div>
+        <div id="agentsNotActiveMsg" style="display:none; margin-top:6px; color:#e67e22; font-weight:600;">Not Yet Active</div>
+        <div id="agentsContainer" style="display:none; margin-top:10px;"></div>
       </div>
 
     </div><!-- /ae-right -->
@@ -381,6 +388,125 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.ae-type-btn').forEach(btn =>
     btn.addEventListener('click', syncModelRow));
   syncModelRow();
+
+  function loadStylesheetOnce(href, id) {
+    return new Promise(function(resolve, reject) {
+      if (document.getElementById(id)) {
+        resolve();
+        return;
+      }
+      const link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = href;
+      link.onload = resolve;
+      link.onerror = reject;
+      document.head.appendChild(link);
+    });
+  }
+
+  function loadScriptOnce(src, id) {
+    return new Promise(function(resolve, reject) {
+      const existing = document.getElementById(id);
+      if (existing) {
+        if (existing.dataset.loaded === 'true') {
+          resolve();
+        } else {
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', reject, { once: true });
+        }
+        return;
+      }
+      const script = document.createElement('script');
+      script.id = id;
+      script.src = src;
+      script.async = true;
+      script.addEventListener('load', function() {
+        script.dataset.loaded = 'true';
+        resolve();
+      }, { once: true });
+      script.addEventListener('error', reject, { once: true });
+      document.head.appendChild(script);
+    });
+  }
+
+  let agentsAssetsPromise = null;
+  function ensureJQuery() {
+    if (window.jQuery) {
+      return Promise.resolve();
+    }
+    return loadScriptOnce('/localsite/js/jquery.min.js', 'engineAgentsJquery');
+  }
+
+  function ensureAgentsAssets() {
+    if (!agentsAssetsPromise) {
+      agentsAssetsPromise = Promise.all([
+        ensureJQuery(),
+        loadStylesheetOnce('agents/agents.css', 'engineAgentsCss'),
+        loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js', 'engineJsYaml'),
+        loadScriptOnce('agents/agents.js', 'engineAgentsJs')
+      ]);
+    }
+    return agentsAssetsPromise;
+  }
+
+  const toggleAgentsEditor = document.getElementById('toggleAgentsEditor');
+  const agentsNotActiveMsg = document.getElementById('agentsNotActiveMsg');
+  const agentsContainer = document.getElementById('agentsContainer');
+
+  function isAgentsOpen() {
+    return agentsContainer && getComputedStyle(agentsContainer).display !== 'none';
+  }
+
+  function isAgentsPopulated() {
+    if (!agentsContainer) {
+      return false;
+    }
+    return agentsContainer.children.length > 0 || agentsContainer.textContent.trim().length > 0;
+  }
+
+  function setAgentsState(open) {
+    if (!agentsContainer || !toggleAgentsEditor) {
+      return;
+    }
+    agentsContainer.style.display = open ? '' : 'none';
+    if (agentsNotActiveMsg) {
+      agentsNotActiveMsg.style.display = open ? '' : 'none';
+    }
+    toggleAgentsEditor.textContent = open ? 'Hide Agents' : 'Edit Agents';
+  }
+
+  if (toggleAgentsEditor && agentsContainer) {
+    toggleAgentsEditor.addEventListener('click', function(event) {
+      event.preventDefault();
+
+      if (isAgentsOpen()) {
+        setAgentsState(false);
+        return;
+      }
+
+      setAgentsState(true);
+      if (isAgentsPopulated()) {
+        if (typeof window.initAgentsEditor === 'function') {
+          window.initAgentsEditor();
+        }
+        return;
+      }
+
+      toggleAgentsEditor.textContent = 'Loading...';
+      ensureAgentsAssets()
+        .then(function() {
+          if (typeof window.initAgentsEditor === 'function') {
+            window.initAgentsEditor();
+          }
+          setAgentsState(true);
+        })
+        .catch(function(error) {
+          console.error('Failed to load agents editor assets', error);
+          setAgentsState(false);
+        });
+    });
+  }
 });
 </script>
 
