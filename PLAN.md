@@ -1,6 +1,6 @@
 # "Arts Engine" with X.ai Rust API
 
-The "engine" folder contains a high-performance text, image, and video generation tool using the **X.ai (Grok) API** via a standalone Rust backend. The application serves a JamStack static frontend from the `requests/engine` subfolder.
+The "[engine](engine)" subfolder contains a high-performance text, image, and video generation tool using the **X.ai (Grok) API** via a standalone Rust backend. The application serves a JamStack static frontend from the `requests/engine` subfolder.
 
 ---
 
@@ -78,18 +78,14 @@ js/
 
 ---
 
-## Template Folder (shared, do not modify)
-
-`requests/template/` contains the shared starting point for all agent builds:
-
 | File | Purpose |
 |------|---------|
-| `index.html` | Full Arts Engine page structure with config.yaml loading |
+| `index.html` | Page structure with config.yaml loading |
 | `css/app.css` | Complete stylesheet — panels, dark mode, storyboard, gallery, lightbox |
 | `js/app.js` | Reference ArtsEngine JS implementation |
 | `config.yaml` | Shared title, subtitle, icon, api_base defaults |
 
-The `index.html` tries `./config.yaml` first (agent-local), then `/requests/template/config.yaml`. This lets agents override the title without modifying the shared template.
+The  `config.yaml` first (agent-local) lets agents override the title without modifying the shared template.
 
 ---
 

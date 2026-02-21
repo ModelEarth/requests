@@ -14,7 +14,6 @@
 <script type="text/javascript" src="/localsite/js/explore.js" id="/localsite/js/explore.js"></script>
 <script>
 loadMarkdown("README.md", "readmeDiv", "_parent");
-loadMarkdown("stream.md", "streamDiv", "_parent");
 loadMarkdown("PLAN.md", "planDiv", "_parent");
 </script>
 <style>
@@ -29,11 +28,18 @@ loadMarkdown("PLAN.md", "planDiv", "_parent");
           background-image: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
           background: #444;
         }
+        .thumbnail {
+            float:left;
+        }
+        .tableSurround {
+            display: flow-root;
+            padding: 18px;
+        }
         #exploreOutput img {
             height: 100%;
             max-height: 150px;
-            float: left;
             margin: 0 10px 10px 0;
+            border-radius: 8px;
         }
         @media (max-width: 1480px) {
           .gallery img {
@@ -101,6 +107,7 @@ loadMarkdown("PLAN.md", "planDiv", "_parent");
                 position: sticky;
                 top: 0;
                 max-height: 100vh;
+                max-height: 400px;
                 overflow-y: auto;
             }
         }
@@ -141,13 +148,10 @@ loadMarkdown("PLAN.md", "planDiv", "_parent");
 
 <div class="content contentpadding" style="padding-top:20px;">
 
-    Currently runs on localhost only. <a href="claude">Frontend by Claude Code</a>. Backend Rust by OpenAI Codex.<br><br>
-
-    <div id="planDiv"></div>
+    Currently runs on localhost only. <a href="explore">Frontend by Claude Code</a>. Backend Rust by OpenAI Codex.<br><br>
 
     <div class="container">
         <div class="left-column">
-             <div id="streamDiv"></div>
              <div id="readmeDiv"></div>
         </div>
         <div class="right-column">
@@ -166,6 +170,23 @@ loadMarkdown("PLAN.md", "planDiv", "_parent");
         </div>
     </div>
 
+    <style>
+        #planDiv table {
+            margin-bottom: 20px;
+        }
+        #planDiv th, #planDiv td {
+            padding-right: 20px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+        }
+        #planDiv th:last-child, #planDiv td:last-child {
+            padding-right: 0;
+        }
+        #planDiv h2 {
+            border: 0px;
+        }
+    </style>
+    <div id="planDiv"></div>
 </div>
 
 </body>
