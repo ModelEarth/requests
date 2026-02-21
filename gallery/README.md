@@ -17,7 +17,7 @@ Storyboard video clips and audio combined with [CapCut](https://capcut.com).
 
 ---
 
-[Requests Visualization](/requests/) | [Fork on GitHub](https://github.com/modelearth/requests/) | [Bee the Predictor](/realitystream/input/bees/)
+[Requests Visualization](/requests/) | [Fork on GitHub](https://github.com/modelearth/requests/) | [Bee the Predictor](https://model.earth/bee-data/)
 <!--
 ## AI Images Generated from Replicate API
 
