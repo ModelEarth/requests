@@ -7,7 +7,6 @@
 			'<div id="agentsFormRows"></div>',
 			'<button id="addApi" class="button button-green">Add</button>',
 			'<button id="copyBtn" class="button" style="display: none;">Copy</button>',
-			'<span id="copyStatus" style="display:none; color:#e67e22; font-weight:600; font-size:13px; margin-left:4px;">Copied</span>',
 			'<button id="clearAll" class="button">Clear All</button>',
 			'<button id="undoBtn" class="button button-undo" style="display: none;">Undo</button>',
 			'<div style="clear:both; height:20px"></div>',
@@ -172,17 +171,27 @@
 			yamlField.style.height = Math.max(minHeight, yamlField.scrollHeight) + 'px';
 		}
 
-		function showCopyStatus() {
-			const statusEl = document.getElementById('copyStatus');
-			if (!statusEl) {
+		function resetCopyButtonLabel() {
+			const copyBtn = document.getElementById('copyBtn');
+			if (!copyBtn) {
 				return;
 			}
-			statusEl.style.display = 'inline-block';
+			copyBtn.textContent = 'Copy';
+			copyBtn.title = '';
+		}
+
+		function showCopyStatus() {
+			const copyBtn = document.getElementById('copyBtn');
+			if (!copyBtn) {
+				return;
+			}
+			copyBtn.textContent = 'COPIED';
+			copyBtn.title = 'COPIED';
 			if (copyStatusTimer) {
 				clearTimeout(copyStatusTimer);
 			}
 			copyStatusTimer = setTimeout(function() {
-				statusEl.style.display = 'none';
+				resetCopyButtonLabel();
 			}, 2000);
 		}
 
@@ -199,17 +208,19 @@
 			localStorage.setItem('aPro', JSON.stringify(aPro));
 			$('#aProOutput').val(JSON.stringify(aPro, null, 2));
 
-			if (typeof window.jsyaml !== 'undefined') {
-				const orderedAPro = buildOrderedAPro();
-				const yamlString = window.jsyaml.dump(orderedAPro);
-				if (JSON.stringify(aPro) === '{}' || typeof JSON.stringify(aPro) === 'undefined') {
-					$('#aProOutputYaml').val('');
-					$('#copyBtn').hide();
-				} else {
-					$('#aProOutputYaml').val(yamlString);
-					$('#copyBtn').show();
+				if (typeof window.jsyaml !== 'undefined') {
+					const orderedAPro = buildOrderedAPro();
+					const yamlString = window.jsyaml.dump(orderedAPro);
+					if (JSON.stringify(aPro) === '{}' || typeof JSON.stringify(aPro) === 'undefined') {
+						$('#aProOutputYaml').val('');
+						$('#copyBtn').hide();
+						resetCopyButtonLabel();
+					} else {
+						$('#aProOutputYaml').val(yamlString);
+						$('#copyBtn').show();
+						resetCopyButtonLabel();
+					}
 				}
-			}
 			applyYamlVisibility();
 			resizeYamlOutput();
 		}
