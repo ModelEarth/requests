@@ -28,7 +28,7 @@ OpenAICompatProvider::new("groq", "https://api.groq.com/openai", key)
 
 ## Default Provider List (includes URLs)
 
-| Provider      | Provider URL | Default text model |
+| Provider      | X-Provider-URL Hardcoded | Default text model |
 |---------------|----------|--------------------|
 | `openai`      | `https://api.openai.com` | `gpt-4o` |
 | `groq`        | `https://api.groq.com/openai` | `llama-3.3-70b-versatile` |
@@ -43,7 +43,7 @@ OpenAICompatProvider::new("groq", "https://api.groq.com/openai", key)
 
 <br>
 
-**OpenAI-compatible services** only need to provide their `X-Provider-URL` since `openai_compat.rs` is used automatically.
+**Add OpenAI-compatible services** by providing their `X-Provider-URL` since `openai_compat.rs` is used automatically.
 
 
 ## Why Gemini, Claude and xAI  have their own files
