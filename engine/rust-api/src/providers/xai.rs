@@ -43,6 +43,22 @@ impl XaiProvider {
         })
     }
 
+    /// Build an XaiProvider from a bare API key (for per-request local storage key override).
+    pub fn with_key(api_key: String) -> anyhow::Result<Self> {
+        let secret = Secret::new(api_key.clone())?;
+        let env = XaiEnvironmentImpl::new(secret)?;
+        let api_client = XaiClient::build(env)?;
+        Ok(Self {
+            api_client,
+            http_client: reqwest::Client::new(),
+            api_key,
+            base_url: "https://api.x.ai/v1".to_string(),
+            default_text_model: "grok-3-mini-beta".to_string(),
+            default_image_model: "grok-imagine-image".to_string(),
+            default_video_model: "grok-imagine-video".to_string(),
+        })
+    }
+
     fn require_prompt(prompt: &str) -> anyhow::Result<()> {
         if prompt.trim().is_empty() {
             anyhow::bail!("Prompt is required");

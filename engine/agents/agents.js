@@ -20,25 +20,10 @@
 		].join('');
 
 	const apiProviders = [
-		'Azure AI',
-		'Building Transparency',
-		'Claude AI',
-		'Cohere AI',
-		'Data Commons',
-		'Dreamstudio AI',
-		'ChatGPT Pro',
-		'ChatGPT Assistant',
-		'Fireworks AI',
-		'Gemini AI',
-		'GitHub',
-		'Groq',
-		'Mistral AI',
-		'NVIDIA',
-		'Observable',
-		'Replicate',
-		'Serp',
-		'Together AI',
-		'X.com'
+		'GEMINI_API_KEY',
+		'CLAUDE_API_KEY',
+		'OPENAI_API_KEY',
+		'XAI_API_KEY'
 	];
 
 	function ensureAgentsContainer() {

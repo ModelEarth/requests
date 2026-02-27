@@ -26,7 +26,8 @@ class ArtsEngine {
     this.prefs = {
       ratio:      this.loadPref('ratio', 'square'),
       outputType: this.loadPref('outputType', 'image'),
-      model:      this.loadPref('model', 'grok-3-mini-beta'),
+      provider:   this.loadPref('provider', 'gemini'),
+      model:      this.loadPref('model', 'gemini-2.0-flash'),
       variations: parseInt(this.loadPref('variations', '1')),
     };
 
@@ -78,6 +79,7 @@ class ArtsEngine {
   }
 
   setup() {
+    this.initProviderSelector(); // populates selects before restorePrefs reads them
     this.bindEvents();
     this.restorePrefs();
     this.renderStoryboard();
@@ -103,8 +105,7 @@ class ArtsEngine {
     document.querySelectorAll('.ae-type-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.type === this.prefs.outputType);
     });
-    const modelSel = document.getElementById('modelSelect');
-    if (modelSel) modelSel.value = this.prefs.model;
+    // providerSelect and modelSelect are managed by initProviderSelector()
     const varInput = document.getElementById('variationsInput');
     if (varInput) varInput.value = this.prefs.variations;
   }
@@ -167,10 +168,10 @@ class ArtsEngine {
       });
     });
 
-    // Model selector
+    // Model selector — save per-provider so each provider remembers its last model
     document.getElementById('modelSelect')?.addEventListener('change', e => {
       this.prefs.model = e.target.value;
-      this.savePref('model', this.prefs.model);
+      this.savePref('model_' + (this.prefs.provider || 'gemini'), e.target.value);
     });
 
     // Variations input (clamp 1–4)
@@ -208,8 +209,8 @@ class ArtsEngine {
 
   updateModelRowVisibility() {
     const type = document.querySelector('.ae-type-btn.active')?.dataset?.type;
-    const modelRow = document.getElementById('modelRow');
-    if (modelRow) modelRow.style.display = (type === 'text') ? '' : 'none';
+    const modelSel = document.getElementById('modelSelect');
+    if (modelSel) modelSel.style.display = (type === 'text') ? '' : 'none';
   }
 
   // -------------------------------------------------------------------------
@@ -403,6 +404,115 @@ class ArtsEngine {
   }
 
   // -------------------------------------------------------------------------
+  // Provider selector — localStorage aPro keys take priority over docker/.env
+  // -------------------------------------------------------------------------
+
+  static get PROVIDER_MODELS() {
+    return {
+      gemini: [
+        { value: 'gemini-2.0-flash',              label: 'Gemini 2.0 Flash' },
+        { value: 'gemini-2.0-flash-thinking-exp', label: 'Gemini 2.0 Flash Thinking' },
+        { value: 'gemini-1.5-pro',                label: 'Gemini 1.5 Pro' },
+        { value: 'gemini-1.5-flash',              label: 'Gemini 1.5 Flash' },
+      ],
+      xai: [
+        { value: 'grok-3-mini-beta', label: 'Grok 3 Mini' },
+        { value: 'grok-3',           label: 'Grok 3' },
+        { value: 'grok-2-1212',      label: 'Grok 2' },
+      ],
+      claude: [
+        { value: 'claude-opus-4-6',            label: 'Claude Opus 4.6' },
+        { value: 'claude-sonnet-4-6',          label: 'Claude Sonnet 4.6' },
+        { value: 'claude-haiku-4-5-20251001',  label: 'Claude Haiku 4.5' },
+      ],
+      openai: [
+        { value: 'gpt-4o',       label: 'GPT-4o' },
+        { value: 'gpt-4o-mini',  label: 'GPT-4o mini' },
+        { value: 'gpt-4-turbo',  label: 'GPT-4 Turbo' },
+      ],
+      env: [
+        { value: 'grok-3-mini-beta', label: 'Grok 3 Mini (default)' },
+        { value: 'grok-3',           label: 'Grok 3' },
+      ],
+    };
+  }
+
+  initProviderSelector() {
+    const KEY_MAP = {
+      'GEMINI_API_KEY': { id: 'gemini', label: 'Gemini' },
+      'CLAUDE_API_KEY': { id: 'claude', label: 'Claude' },
+      'OPENAI_API_KEY': { id: 'openai', label: 'OpenAI' },
+      'XAI_API_KEY':   { id: 'xai',    label: 'xAI' },
+    };
+
+    let aPro = {};
+    try { aPro = JSON.parse(localStorage.getItem('aPro') || '{}'); } catch (_) {}
+
+    const sel = document.getElementById('providerSelect');
+    if (!sel) return;
+
+    sel.innerHTML = '';
+    for (const [keyName, { id, label }] of Object.entries(KEY_MAP)) {
+      if (aPro[keyName]) {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = label;
+        sel.appendChild(opt);
+      }
+    }
+    // Backend (.env) fallback always available
+    const envOpt = document.createElement('option');
+    envOpt.value = 'env';
+    envOpt.textContent = 'Backend (.env)';
+    sel.appendChild(envOpt);
+
+    // Restore saved provider; default to gemini if available
+    const saved = this.prefs.provider;
+    const match = [...sel.options].find(o => o.value === saved);
+    sel.value = match ? saved : sel.options[0].value;
+    this.prefs.provider = sel.value;
+
+    sel.addEventListener('change', () => {
+      this.prefs.provider = sel.value;
+      this.savePref('provider', sel.value);
+      this.updateModelOptions();
+    });
+
+    this.updateModelOptions();
+  }
+
+  updateModelOptions() {
+    const providerId = this.prefs.provider || 'gemini';
+    const models = ArtsEngine.PROVIDER_MODELS[providerId] || ArtsEngine.PROVIDER_MODELS.env;
+    const modelSel = document.getElementById('modelSelect');
+    if (!modelSel) return;
+    modelSel.innerHTML = models.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+    // Restore per-provider saved model
+    const saved = this.loadPref('model_' + providerId, models[0].value);
+    modelSel.value = [...modelSel.options].find(o => o.value === saved) ? saved : models[0].value;
+    this.prefs.model = modelSel.value;
+  }
+
+  getActiveProvider() {
+    const KEY_NAMES = { gemini: 'GEMINI_API_KEY', xai: 'XAI_API_KEY', claude: 'CLAUDE_API_KEY', openai: 'OPENAI_API_KEY' };
+    const providerId = document.getElementById('providerSelect')?.value || this.prefs.provider;
+    if (!providerId || providerId === 'env') return null; // use backend .env
+    let aPro = {};
+    try { aPro = JSON.parse(localStorage.getItem('aPro') || '{}'); } catch (_) {}
+    const key = aPro[KEY_NAMES[providerId]];
+    return key ? { provider: providerId, key } : null;
+  }
+
+  buildProviderHeaders() {
+    const active = this.getActiveProvider();
+    if (!active) return {};
+    if (active.provider === 'gemini') {
+      alert('Using GEMINI_API_KEY from local storage (#apiProvider1).');
+    }
+    return { 'X-Provider-Name': active.provider, 'X-Provider-Key': active.key };
+  }
+
+  // -------------------------------------------------------------------------
   // Generation
   // -------------------------------------------------------------------------
 
@@ -475,7 +585,7 @@ class ArtsEngine {
     const ratio = this.ratioAlias(scene.aspect_ratio) || this.prefs.ratio;
     const resp = await fetch(`${this.apiBase}/generate/image`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
       body: JSON.stringify({ prompt: scene.prompt, aspect_ratio: this.ratioToApiString(ratio), response_format: 'url' }),
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
@@ -491,7 +601,7 @@ class ArtsEngine {
   async generateText(scene, sceneIdx) {
     const resp = await fetch(`${this.apiBase}/generate/text`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
       body: JSON.stringify({ prompt: scene.prompt, model: this.prefs.model, max_tokens: 1024 }),
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
@@ -508,7 +618,7 @@ class ArtsEngine {
     this.setStatus('info', `Submitting video: "${prompt.slice(0, 60)}${prompt.length > 60 ? '…' : ''}"`);
     const resp = await fetch(`${this.apiBase}/generate/video`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
       body: JSON.stringify({ prompt, aspect_ratio: this.ratioToApiString(ratio) }),
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }

@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
+    http::HeaderMap,
     routing::{get, post},
     Json, Router,
 };
@@ -24,7 +25,7 @@ use crate::models::{
     HealthResponse, ListModelsResponse, TextGenerationRequest, ImageGenerationRequest,
     VideoGenerationRequest,
 };
-use crate::providers::{build_provider, GenerativeModel};
+use crate::providers::{build_provider, build_provider_dynamic, GenerativeModel};
 
 #[derive(Clone)]
 struct AppState {
@@ -62,6 +63,30 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Return a per-request provider when the frontend supplies X-Provider-Name and
+/// X-Provider-Key headers (local storage key takes priority over docker/.env).
+/// Falls back to the default AppState provider when headers are absent.
+fn resolve_request_provider(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> anyhow::Result<Arc<dyn GenerativeModel>> {
+    let name = headers
+        .get("x-provider-name")
+        .and_then(|v| v.to_str().ok())
+        .filter(|s| !s.is_empty());
+    let key = headers
+        .get("x-provider-key")
+        .and_then(|v| v.to_str().ok())
+        .filter(|s| !s.is_empty());
+    match (name, key) {
+        (Some(n), Some(k)) => {
+            info!("Using per-request provider '{}' from request headers", n);
+            build_provider_dynamic(n, k)
+        }
+        _ => Ok(Arc::clone(&state.provider)),
+    }
+}
+
 async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
     Json(HealthResponse {
         ok: true,
@@ -77,26 +102,32 @@ async fn list_models(State(state): State<AppState>) -> AppResult<Json<ListModels
 
 async fn generate_text(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<TextGenerationRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let response = state.provider.generate_text(payload).await?;
+    let provider = resolve_request_provider(&state, &headers)?;
+    let response = provider.generate_text(payload).await?;
     Ok(Json(serde_json::to_value(response)?))
 }
 
 async fn generate_image(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<ImageGenerationRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let response = state.provider.generate_image(payload).await?;
+    let provider = resolve_request_provider(&state, &headers)?;
+    let response = provider.generate_image(payload).await?;
     Ok(Json(serde_json::to_value(response)?))
 }
 
 async fn generate_video(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<VideoGenerationRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
+    let provider = resolve_request_provider(&state, &headers)?;
     let prompt = payload.prompt.clone();
-    let response = state.provider.generate_video(payload).await?;
+    let response = provider.generate_video(payload).await?;
     if let Some(id) = &response.id {
         append_mycontent_csv(&prompt, id);
     }

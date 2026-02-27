@@ -204,13 +204,10 @@ param.showsearch = "false";
             <input type="number" id="variationsInput" min="1" max="4" value="2">
           </div>
 
-          <!-- Model selector (hidden when outputType=image) -->
-          <div id="modelRow" style="display:none">
-            <select id="modelSelect" class="ae-model-select" title="Text model">
-              <option value="grok-3-mini-beta">grok-3-mini-beta</option>
-              <option value="grok-3">grok-3</option>
-              <option value="grok-2-1212">grok-2-1212</option>
-            </select>
+          <!-- Provider + model selectors (JS populates from localStorage aPro; model hidden for image/video) -->
+          <div id="modelRow" style="display:flex;gap:8px;align-items:center">
+            <select id="providerSelect" class="ae-model-select" title="AI Provider"></select>
+            <select id="modelSelect" class="ae-model-select" title="Text model" style="display:none"></select>
           </div>
 
         </div>
@@ -379,11 +376,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (input && window.AE_API_BASE) input.value = window.AE_API_BASE;
   }, 300);
 
-  // Show model selector only for text output type
+  // Show model selector only for text output type; provider select always visible
   function syncModelRow() {
     const type = document.querySelector('.ae-type-btn.active')?.dataset?.type;
-    const row = document.getElementById('modelRow');
-    if (row) row.style.display = type === 'text' ? '' : 'none';
+    const sel = document.getElementById('modelSelect');
+    if (sel) sel.style.display = type === 'text' ? '' : 'none';
   }
   document.querySelectorAll('.ae-type-btn').forEach(btn =>
     btn.addEventListener('click', syncModelRow));
