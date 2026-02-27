@@ -16,7 +16,7 @@ provider is active at runtime.
 ## Multiple providers use openai_compat.rs
 
 A large and growing set of inference services implement the same OpenAI REST
-wire format: `POST /v1/chat/completions` for text and `POST /v1/images/generations`
+wire-format: `POST /v1/chat/completions` for text and `POST /v1/images/generations`
 for images. The request and response shapes are identical; only the `base_url`
 and `api_key` differ. `OpenAICompatProvider` is constructed with those two values
 plus optional model overrides:
