@@ -5,3 +5,5 @@ We're creating galleries that reside adjacent to reading material and prompting 
 Images are loaded into the side gallery (to the right) via the Github JavaScript API.  Prompt .csv files were created using location data on industry levels and [related tradeflow factors](../exiobase/tradeflow/).  
 
 Flowcharts in [FloraFauna](https://www.florafauna.ai) and [ComfyUI](https://docs.comfy.org/get_started/introduction) provide editors with scene overviews based on flowcharts, similar to integrating [data-pipelines](/data-pipeline/admin) in storyboards. 
+
+About [Providers Rust](engine/rust-api/src/providers)

@@ -409,26 +409,52 @@ class ArtsEngine {
 
   static get PROVIDER_MODELS() {
     return {
+      claude: [
+        { value: 'claude-opus-4-6',           label: 'Claude Opus 4.6' },
+        { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6' },
+        { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+      ],
       gemini: [
         { value: 'gemini-2.0-flash',              label: 'Gemini 2.0 Flash' },
         { value: 'gemini-2.0-flash-thinking-exp', label: 'Gemini 2.0 Flash Thinking' },
         { value: 'gemini-1.5-pro',                label: 'Gemini 1.5 Pro' },
         { value: 'gemini-1.5-flash',              label: 'Gemini 1.5 Flash' },
       ],
+      openai: [
+        { value: 'gpt-4o',      label: 'GPT-4o' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o mini' },
+        { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+      ],
       xai: [
         { value: 'grok-3-mini-beta', label: 'Grok 3 Mini' },
         { value: 'grok-3',           label: 'Grok 3' },
         { value: 'grok-2-1212',      label: 'Grok 2' },
       ],
-      claude: [
-        { value: 'claude-opus-4-6',            label: 'Claude Opus 4.6' },
-        { value: 'claude-sonnet-4-6',          label: 'Claude Sonnet 4.6' },
-        { value: 'claude-haiku-4-5-20251001',  label: 'Claude Haiku 4.5' },
+      groq: [
+        { value: 'llama-3.3-70b-versatile',  label: 'Llama 3.3 70B' },
+        { value: 'llama-3.1-8b-instant',     label: 'Llama 3.1 8B' },
+        { value: 'mixtral-8x7b-32768',       label: 'Mixtral 8x7B' },
       ],
-      openai: [
-        { value: 'gpt-4o',       label: 'GPT-4o' },
-        { value: 'gpt-4o-mini',  label: 'GPT-4o mini' },
-        { value: 'gpt-4-turbo',  label: 'GPT-4 Turbo' },
+      together: [
+        { value: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',     label: 'Llama 3.3 70B Turbo' },
+        { value: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', label: 'Llama 3.1 8B Turbo' },
+      ],
+      fireworks: [
+        { value: 'accounts/fireworks/models/llama-v3p3-70b-instruct', label: 'Llama 3.3 70B' },
+        { value: 'accounts/fireworks/models/qwen2p5-72b-instruct',    label: 'Qwen 2.5 72B' },
+      ],
+      mistral: [
+        { value: 'mistral-large-latest', label: 'Mistral Large' },
+        { value: 'mistral-small-latest', label: 'Mistral Small' },
+        { value: 'codestral-latest',     label: 'Codestral' },
+      ],
+      perplexity: [
+        { value: 'llama-3.1-sonar-large-128k-online', label: 'Sonar Large (online)' },
+        { value: 'llama-3.1-sonar-small-128k-online', label: 'Sonar Small (online)' },
+      ],
+      deepseek: [
+        { value: 'deepseek-chat',     label: 'DeepSeek Chat' },
+        { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
       ],
       env: [
         { value: 'grok-3-mini-beta', label: 'Grok 3 Mini (default)' },
@@ -439,10 +465,16 @@ class ArtsEngine {
 
   initProviderSelector() {
     const KEY_MAP = {
-      'GEMINI_API_KEY': { id: 'gemini', label: 'Gemini' },
-      'CLAUDE_API_KEY': { id: 'claude', label: 'Claude' },
-      'OPENAI_API_KEY': { id: 'openai', label: 'OpenAI' },
-      'XAI_API_KEY':   { id: 'xai',    label: 'xAI' },
+      'CLAUDE_API_KEY':      { id: 'claude',     label: 'Claude' },
+      'GEMINI_API_KEY':      { id: 'gemini',     label: 'Gemini' },
+      'OPENAI_API_KEY':      { id: 'openai',     label: 'OpenAI' },
+      'XAI_API_KEY':         { id: 'xai',        label: 'xAI' },
+      'GROQ_API_KEY':        { id: 'groq',       label: 'Groq' },
+      'TOGETHER_API_KEY':    { id: 'together',   label: 'Together AI' },
+      'FIREWORKS_API_KEY':   { id: 'fireworks',  label: 'Fireworks AI' },
+      'MISTRAL_API_KEY':     { id: 'mistral',    label: 'Mistral' },
+      'PERPLEXITY_API_KEY':  { id: 'perplexity', label: 'Perplexity' },
+      'DEEPSEEK_API_KEY':    { id: 'deepseek',   label: 'DeepSeek' },
     };
 
     let aPro = {};
@@ -494,7 +526,18 @@ class ArtsEngine {
   }
 
   getActiveProvider() {
-    const KEY_NAMES = { gemini: 'GEMINI_API_KEY', xai: 'XAI_API_KEY', claude: 'CLAUDE_API_KEY', openai: 'OPENAI_API_KEY' };
+    const KEY_NAMES = {
+      claude:     'CLAUDE_API_KEY',
+      gemini:     'GEMINI_API_KEY',
+      openai:     'OPENAI_API_KEY',
+      xai:        'XAI_API_KEY',
+      groq:       'GROQ_API_KEY',
+      together:   'TOGETHER_API_KEY',
+      fireworks:  'FIREWORKS_API_KEY',
+      mistral:    'MISTRAL_API_KEY',
+      perplexity: 'PERPLEXITY_API_KEY',
+      deepseek:   'DEEPSEEK_API_KEY',
+    };
     const providerId = document.getElementById('providerSelect')?.value || this.prefs.provider;
     if (!providerId || providerId === 'env') return null; // use backend .env
     let aPro = {};

@@ -65,23 +65,21 @@ async fn main() -> anyhow::Result<()> {
 
 /// Return a per-request provider when the frontend supplies X-Provider-Name and
 /// X-Provider-Key headers (local storage key takes priority over docker/.env).
+/// X-Provider-URL is optional: required only for unknown provider names, which
+/// are routed through openai_compat as a fallback.
 /// Falls back to the default AppState provider when headers are absent.
 fn resolve_request_provider(
     state: &AppState,
     headers: &HeaderMap,
 ) -> anyhow::Result<Arc<dyn GenerativeModel>> {
-    let name = headers
-        .get("x-provider-name")
-        .and_then(|v| v.to_str().ok())
-        .filter(|s| !s.is_empty());
-    let key = headers
-        .get("x-provider-key")
-        .and_then(|v| v.to_str().ok())
-        .filter(|s| !s.is_empty());
+    let get = |h| headers.get(h).and_then(|v| v.to_str().ok()).filter(|s| !s.is_empty());
+    let name = get("x-provider-name");
+    let key  = get("x-provider-key");
+    let url  = get("x-provider-url");
     match (name, key) {
         (Some(n), Some(k)) => {
             info!("Using per-request provider '{}' from request headers", n);
-            build_provider_dynamic(n, k)
+            build_provider_dynamic(n, k, url)
         }
         _ => Ok(Arc::clone(&state.provider)),
     }
