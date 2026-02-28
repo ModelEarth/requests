@@ -1,6 +1,6 @@
-# "Arts Engine" with X.ai Rust API
+# "Arts Engine" with Rust API
 
-The "[engine](engine)" subfolder contains a high-performance text, image, and video generation tool using the **X.ai (Grok) API** via a standalone Rust backend. The application serves a JamStack static frontend from the `requests/engine` subfolder.
+The "[engine](engine)" subfolder contains a high-performance text, image, and video generation tool build with **Claude Code** and **OpenAI Codex** for interaction with their APIs, **X.ai Grok**, **Gemini** and additional [API providers](engine/rust-api/src/providers/) via a standalone Rust backend. The application serves a JamStack static frontend from the `requests/engine` subfolder.
 
 ---
 

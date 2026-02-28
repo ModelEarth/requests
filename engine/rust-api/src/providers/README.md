@@ -1,6 +1,6 @@
-# Provider Architecture
+# API Provider Architecture
 
-Each file in this directory implements the `GenerativeModel` trait for one AI
+Each file in this directory implements the `GenerativeModel` trait for one AI Agent
 backend. The trait defines a uniform interface — `generate_text`, `generate_image`,
 `generate_video`, `video_status` — so `main.rs` handlers never know which
 provider is active at runtime.
