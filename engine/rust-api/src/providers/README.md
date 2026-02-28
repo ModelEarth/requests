@@ -10,7 +10,7 @@ provider is active at runtime.
 | `openai_compat.rs` | OpenAI, Groq, Fireworks AI, Together AI, Mistral, any OpenAI-wire-format service |
 | `claude.rs` | Anthropic Claude — own wire format, see divergences below |
 | `gemini.rs` | Google Gemini (text) and Imagen (image) |
-| `xai.rs` | xAI Grok via the `api_xai` crate |
+| `xai.rs` | [xAI](https://console.x.ai) Grok via the `api_xai` crate |
 <br>
 
 ## Multiple providers use openai_compat.rs
