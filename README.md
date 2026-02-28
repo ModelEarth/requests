@@ -6,4 +6,4 @@ Images are loaded into the side gallery (to the right) via the Github JavaScript
 
 Flowcharts in [FloraFauna](https://www.florafauna.ai) and [ComfyUI](https://docs.comfy.org/get_started/introduction) provide editors with scene overviews based on flowcharts, similar to integrating [data-pipelines](/data-pipeline/admin) in storyboards. 
 
-About [Providers Rust](engine/rust-api/src/providers)
+About our Rust implementation's [API Provider Architecture](engine/rust-api/src/providers)
