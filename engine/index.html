@@ -71,6 +71,31 @@ param.showsearch = "false";
 })();
 </script>
 
+<style>
+/* Output panel — sections side by side, labels left of controls */
+.ae-output-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+.ae-model-section,
+.ae-output-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ae-model-label,
+.ae-output-controls h3 {
+  margin: 0;
+  white-space: nowrap;
+}
+.ae-model-section {
+  flex: 0 0 100%;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 8px;
+}
+</style>
 </head>
 
 <body>
@@ -184,33 +209,41 @@ param.showsearch = "false";
 
       <!-- Output Type + Generate -->
       <div class="ae-panel">
-        <h3>Output</h3>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;justify-content:space-between">
+        <div class="ae-output-header">
 
-          <div class="ae-type-row">
-            <button class="ae-type-btn active" data-type="image">
-              <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">image</span>
-              Image
-            </button>
-            <button class="ae-type-btn" data-type="text">
-              <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">text_fields</span>
-              Text
-            </button>
-            <button class="ae-type-btn" data-type="video">
-              <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">videocam</span>
-              Video
-            </button>
+          <div class="ae-model-section">
+            <h3 class="ae-model-label">Model</h3>
+            <div id="modelRow" style="display:flex;gap:8px;align-items:center">
+              <select id="providerSelect" class="ae-model-select" title="AI Provider"></select>
+              <select id="modelSelect" class="ae-model-select" title="Model"></select>
+            </div>
+            <a href="#" id="toggleAgentsEditor" class="btn btn-nice" style="margin-left:auto">Add</a>
           </div>
 
-          <div class="ae-variations-row" style="margin-top:0;align-self:center">
-            <label for="variationsInput">Variations:</label>
-            <input type="number" id="variationsInput" min="1" max="4" value="2">
-          </div>
+          <div id="agentsContainer" style="display:none; flex:0 0 100%; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid #ccc;"></div>
 
-          <!-- Provider + model selectors (JS populates from localStorage aPro; model hidden for image/video) -->
-          <div id="modelRow" style="display:flex;gap:8px;align-items:center">
-            <select id="providerSelect" class="ae-model-select" title="AI Provider"></select>
-            <select id="modelSelect" class="ae-model-select" title="Text model" style="display:none"></select>
+          <div class="ae-output-controls">
+            <h3>Output</h3>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px">
+              <div class="ae-type-row">
+                <button class="ae-type-btn active" data-type="image">
+                  <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">image</span>
+                  Image
+                </button>
+                <button class="ae-type-btn" data-type="text">
+                  <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">text_fields</span>
+                  Text
+                </button>
+                <button class="ae-type-btn" data-type="video">
+                  <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">videocam</span>
+                  Video
+                </button>
+              </div>
+              <div class="ae-variations-row" style="margin-top:0;align-self:center">
+                <label for="variationsInput">Variations:</label>
+                <input type="number" id="variationsInput" min="1" max="4" value="2">
+              </div>
+            </div>
           </div>
 
         </div>
@@ -343,12 +376,6 @@ param.showsearch = "false";
           <li><a href="https://github.com/ModelEarth/requests" target="_blank">requests repo</a></li>
         </ul>
 
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
-          <a href="agents" class="btn btn-nice">My Agents</a>
-          <a href="#" id="toggleAgentsEditor" class="btn btn-nice">Edit Agents</a>
-        </div>
-        <div id="agentsNotActiveMsg" style="display:none; margin-top:6px; color:#e67e22; font-weight:600;">Not Yet Active</div>
-        <div id="agentsContainer" style="display:none; margin-top:10px;"></div>
       </div>
 
     </div><!-- /ae-right -->
@@ -378,16 +405,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('apiBaseInput');
     if (input && window.AE_API_BASE) input.value = window.AE_API_BASE;
   }, 300);
-
-  // Show model selector only for text output type; provider select always visible
-  function syncModelRow() {
-    const type = document.querySelector('.ae-type-btn.active')?.dataset?.type;
-    const sel = document.getElementById('modelSelect');
-    if (sel) sel.style.display = type === 'text' ? '' : 'none';
-  }
-  document.querySelectorAll('.ae-type-btn').forEach(btn =>
-    btn.addEventListener('click', syncModelRow));
-  syncModelRow();
 
   function loadStylesheetOnce(href, id) {
     return new Promise(function(resolve, reject) {
@@ -451,7 +468,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   const toggleAgentsEditor = document.getElementById('toggleAgentsEditor');
-  const agentsNotActiveMsg = document.getElementById('agentsNotActiveMsg');
   const agentsContainer = document.getElementById('agentsContainer');
 
   function isAgentsOpen() {
@@ -470,10 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     agentsContainer.style.display = open ? '' : 'none';
-    if (agentsNotActiveMsg) {
-      agentsNotActiveMsg.style.display = open ? '' : 'none';
-    }
-    toggleAgentsEditor.textContent = open ? 'Hide Agents' : 'Edit Agents';
+    toggleAgentsEditor.style.display = open ? 'none' : '';
   }
 
   if (toggleAgentsEditor && agentsContainer) {
@@ -493,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      toggleAgentsEditor.textContent = 'Loading...';
+      toggleAgentsEditor.style.display = 'none';
       ensureAgentsAssets()
         .then(function() {
           if (typeof window.initAgentsEditor === 'function') {

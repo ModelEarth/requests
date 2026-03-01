@@ -208,9 +208,7 @@ class ArtsEngine {
   }
 
   updateModelRowVisibility() {
-    const type = document.querySelector('.ae-type-btn.active')?.dataset?.type;
-    const modelSel = document.getElementById('modelSelect');
-    if (modelSel) modelSel.style.display = (type === 'text') ? '' : 'none';
+    // model select is always visible; retained for type-btn change events
   }
 
   // -------------------------------------------------------------------------
@@ -492,8 +490,9 @@ class ArtsEngine {
         sel.appendChild(opt);
       }
     }
-    // Backend (.env) fallback always available
+    // Backend (.env) fallback — label updated to actual provider once health check resolves
     const envOpt = document.createElement('option');
+    envOpt.id    = 'providerEnvOpt';
     envOpt.value = 'env';
     envOpt.textContent = 'Backend (.env)';
     sel.appendChild(envOpt);
@@ -882,7 +881,16 @@ class ArtsEngine {
         const data = await resp.json();
         if (dot) dot.className = 'ae-backend-dot online';
         if (label) label.textContent = data.provider ? `Backend online · ${data.provider} ready` : 'Backend online';
-        if (data.provider) this._healthProvider = data.provider;
+        if (data.provider) {
+          this._healthProvider = data.provider;
+          const LABELS = {
+            claude: 'Claude', gemini: 'Gemini', openai: 'OpenAI', xai: 'xAI',
+            groq: 'Groq', together: 'Together AI', fireworks: 'Fireworks AI',
+            mistral: 'Mistral', perplexity: 'Perplexity', deepseek: 'DeepSeek',
+          };
+          const envOpt = document.getElementById('providerEnvOpt');
+          if (envOpt) envOpt.textContent = (LABELS[data.provider] || data.provider) + ' (.env)';
+        }
         return true;
       }
     } catch { /* offline */ }

@@ -3,20 +3,16 @@
 
 (function initAgentsModule() {
 		const AGENTS_SHELL_HTML = [
-			'Keys reside in local browser storage.<br><br>',
 			'<div id="agentsFormRows"></div>',
-			'<button id="addApi" class="button button-green">Add</button>',
+			'<button id="addApi" class="button button-green" style="display:none;">Save</button>',
 			'<button id="copyBtn" class="button" style="display: none;">Copy</button>',
+			'<button id="viewBtn" class="button" style="display: none;">View</button>',
 			'<button id="clearAll" class="button">Clear All</button>',
 			'<button id="undoBtn" class="button button-undo" style="display: none;">Undo</button>',
 			'<div style="clear:both; height:20px"></div>',
-			'<textarea id="aProOutput" style="display:none"></textarea>',
-			'<textarea id="aProOutputYaml"></textarea>',
-			'<textarea id="aProInput" style="display: none;"></textarea>',
-			'<div style="clear:both; height:4px"></div>',
-			'<button id="closeBtn" class="button" style="display: none;">Close</button>',
+			'<textarea id="aProOutputYaml" style="display:none"></textarea>',
 			'<div style="clear:both; height:16px"></div>',
-			'Copy to transfer your keys to another browser.'
+			'Copy to transfer your keys to another browser. <a href="agents" target="edit-agents">→</a>'
 		].join('');
 
 	const apiProviders = [
@@ -32,6 +28,19 @@
 		'DEEPSEEK_API_KEY'
 	];
 
+	const PROVIDER_LABELS = {
+		'CLAUDE_API_KEY':     'Claude',
+		'GEMINI_API_KEY':     'Gemini',
+		'OPENAI_API_KEY':     'OpenAI',
+		'XAI_API_KEY':        'xAI',
+		'GROQ_API_KEY':       'Groq',
+		'TOGETHER_API_KEY':   'Together AI',
+		'FIREWORKS_API_KEY':  'Fireworks AI',
+		'MISTRAL_API_KEY':    'Mistral',
+		'PERPLEXITY_API_KEY': 'Perplexity',
+		'DEEPSEEK_API_KEY':   'DeepSeek',
+	};
+
 	function ensureAgentsContainer() {
 		const host = document.getElementById('agentsContainer');
 		if (!host) {
@@ -44,25 +53,27 @@
 		return host;
 	}
 
-	function generateProviderOptionsHtml() {
+	function generateProviderOptionsHtml(aProRef) {
 		const options = ['<option value="">Select a provider...</option>'];
 		apiProviders.forEach(function(provider) {
-			options.push('<option>' + provider + '</option>');
+			const hasKey = aProRef && aProRef[provider];
+			const label = (PROVIDER_LABELS[provider] || provider) + (hasKey ? ' ●' : '');
+			options.push('<option value="' + provider + '">' + label + '</option>');
 		});
-		options.push('<option>Other</option>');
+		options.push('<option value="Other">Other</option>');
 		return options.join('');
 	}
 
-	function generateRepeatingSection(index) {
+	function generateRepeatingSection(index, aProRef) {
 		return [
 			'<div class="repeating-section" style="display:inline-text" id="panel' + index + '">',
-			'  <div style="float: left;">',
-			'    <label for="apiProvider' + index + '">API Provider</label><br>',
+			'  <div style="display:flex; align-items:center; gap:8px;">',
 			'    <select id="apiProvider' + index + '" class="apiProvider">',
-			generateProviderOptionsHtml(),
-			'    </select><br>',
-			'    <input type="text" id="apiProviderOther' + index + '" placeholder="Other Provider" class="textInput" style="display:none; min-width:225px; margin-bottom:10px">',
+			generateProviderOptionsHtml(aProRef),
+			'    </select>',
+			'    <button class="ae-close-agents" title="Close" style="margin-left:auto; background:none; border:1px solid #aaa; border-radius:50%; width:22px; height:22px; cursor:pointer; color:#888; font-size:0.85rem; line-height:1; padding:0; display:flex; align-items:center; justify-content:center;">&#x2715;</button>',
 			'  </div>',
+			'  <input type="text" id="apiProviderOther' + index + '" placeholder="Other Provider" class="textInput" style="display:none; min-width:225px; margin-bottom:10px">',
 			'  <div id="apiKeyField' + index + '" style="display:none; overflow:auto; min-width:300px">',
 			'    <label for="apiKey' + index + '">API Key</label><br>',
 			'    <div class="api-key-container">',
@@ -113,14 +124,6 @@
 
 		if (isValidJSON(localStorage.getItem('aPro'))) {
 			aPro = JSON.parse(localStorage.getItem('aPro')) || {};
-		}
-
-		function buildOrderedAPro() {
-			const orderedObj = {};
-			Object.keys(aPro).forEach(function(k) {
-				orderedObj[k] = aPro[k];
-			});
-			return orderedObj;
 		}
 
 		function getYamlTextarea() {
@@ -197,18 +200,18 @@
 
 		function updateLocalStorage() {
 			localStorage.setItem('aPro', JSON.stringify(aPro));
-			$('#aProOutput').val(JSON.stringify(aPro, null, 2));
-
-				if (typeof window.jsyaml !== 'undefined') {
-					const orderedAPro = buildOrderedAPro();
-					const yamlString = window.jsyaml.dump(orderedAPro);
+			
+	if (typeof window.jsyaml !== 'undefined') {
+						const yamlString = window.jsyaml.dump(aPro);
 					if (JSON.stringify(aPro) === '{}' || typeof JSON.stringify(aPro) === 'undefined') {
-						$('#aProOutputYaml').val('');
+						$('#aProOutputYaml').val('').hide();
 						$('#copyBtn').hide();
+						$('#viewBtn').hide();
 						resetCopyButtonLabel();
 					} else {
 						$('#aProOutputYaml').val(yamlString);
 						$('#copyBtn').show();
+						$('#viewBtn').show();
 						resetCopyButtonLabel();
 					}
 				}
@@ -218,7 +221,13 @@
 
 		function ensureSingleInputRow() {
 			$('#agentsFormRows').empty();
-			$('#agentsFormRows').append(generateRepeatingSection(1));
+			$('#agentsFormRows').append(generateRepeatingSection(1, aPro));
+		}
+
+		function updateSaveBtn() {
+			const provider = $('#apiProvider1').val();
+			const key = $('#apiKey1').val().trim();
+			$('#addApi').toggle(!!(provider && key));
 		}
 
 		function clearInputRow() {
@@ -322,9 +331,17 @@
 			ensureSingleInputRow();
 		}
 
-		clearUndoSnapshot();
+		checkUndoAvailability();
 		ensureSingleInputRow();
 		updateLocalStorage();
+
+		// Restore previously selected provider (don't show key field — no pre-filled value)
+		(function() {
+			const saved = localStorage.getItem('ae_provider1');
+			if (!saved) return;
+			$('#apiProvider1').val(saved);
+			if (saved === 'Other') $('#apiProviderOther1').show();
+		}());
 
 		$host.on('click', '#addApi', function() {
 			let provider = $('#apiProvider1').val();
@@ -340,7 +357,8 @@
 			const finalKey = generateUniqueKey(provider);
 			aPro[finalKey] = keyVal;
 			updateLocalStorage();
-			clearInputRow();
+			ensureSingleInputRow();
+			updateSaveBtn();
 		});
 
 		$host.on('change', 'select[id^="apiProvider"]', function() {
@@ -361,6 +379,14 @@
 				$('#apiKeyField' + index).hide();
 				$('#apiKey' + index).val('').attr('class', 'textInput hiddenInput');
 			}
+			if (index === '1') {
+				localStorage.setItem('ae_provider1', newKey);
+			}
+			updateSaveBtn();
+		});
+
+		$host.on('input', '#apiKey1', function() {
+			updateSaveBtn();
 		});
 
 		$host.on('click', '#undoBtn', function() {
@@ -443,55 +469,26 @@
 			fallbackCopy();
 		});
 
-		$host.on('click', '#closeBtn', function() {
-			$('#aProOutput').hide();
-			$(this).hide();
+		$host.on('click', '#viewBtn', function() {
+			const yaml = $('#aProOutputYaml');
+			const visible = yaml.is(':visible');
+			yaml.toggle(!visible);
+			$(this).text(visible ? 'View' : 'Hide');
 		});
 
-		$host.on('click', '#pasteBtn', function() {
-			$('#aProInput').show();
-			$('#aProInput').val('').focus();
-		});
-
-		$host.on('input', '#aProInput', function() {
-			const input = $(this).val().trim();
-			if (!input) {
-				return;
-			}
-			try {
-				const parsed = JSON.parse(input);
-				for (const key in parsed) {
-					if (!Object.prototype.hasOwnProperty.call(parsed, key)) {
-						continue;
-					}
-					const originalKey = key.replace(/\d+/g, '').replace(/_/g, ' ');
-					const existingKeys = Object.keys(aPro).map(function(k) {
-						return k.replace(/\d+/g, '').replace(/_/g, ' ');
-					});
-					if (!existingKeys.includes(originalKey)) {
-						aPro[key] = parsed[key];
-					} else {
-						let counter = 2;
-						while (existingKeys.includes(originalKey + counter)) {
-							counter++;
-						}
-						aPro[originalKey.replace(/ /g, '_') + counter] = parsed[key];
-					}
-				}
-				updateLocalStorage();
-				populateRepeatingSections();
-			} catch (error) {
-				console.error('Error parsing input:', error);
-			}
+		$host.on('click', '.ae-close-agents', function() {
+			$('#agentsContainer').hide();
+			$('#toggleAgentsEditor').show();
 		});
 
 		$host.on('click', '#clearAll', function() {
 			saveUndoState();
 			localStorage.removeItem('aPro');
+			localStorage.removeItem('ae_provider1');
 			aPro = {};
 			updateLocalStorage();
 			ensureSingleInputRow();
-			clearInputRow();
+			updateSaveBtn();
 		});
 	}
 
