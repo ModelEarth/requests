@@ -57,7 +57,7 @@
 		const options = ['<option value="">Select a provider...</option>'];
 		apiProviders.forEach(function(provider) {
 			const hasKey = aProRef && aProRef[provider];
-			const label = (PROVIDER_LABELS[provider] || provider) + (hasKey ? ' ●' : '');
+			const label = (PROVIDER_LABELS[provider] || provider) + (hasKey ? ' •' : '');
 			options.push('<option value="' + provider + '">' + label + '</option>');
 		});
 		options.push('<option value="Other">Other</option>');
@@ -68,7 +68,7 @@
 		return [
 			'<div class="repeating-section" style="display:inline-text" id="panel' + index + '">',
 			'  <div style="display:flex; align-items:center; gap:8px;">',
-			'    <select id="apiProvider' + index + '" class="apiProvider">',
+			'    <select id="apiProviderMenu" class="apiProvider">',
 			generateProviderOptionsHtml(aProRef),
 			'    </select>',
 			'    <button class="ae-close-agents" title="Close" style="margin-left:auto; background:none; border:1px solid #aaa; border-radius:50%; width:22px; height:22px; cursor:pointer; color:#888; font-size:0.85rem; line-height:1; padding:0; display:flex; align-items:center; justify-content:center;">&#x2715;</button>',
@@ -198,23 +198,38 @@
 			}
 		}
 
+		function toEnvFormat(obj) {
+			return Object.keys(obj).map(k => k + '=' + obj[k]).join('\n');
+		}
+
+		function parseEnvFormat(text) {
+			const result = {};
+			text.split('\n').forEach(line => {
+				const trimmed = line.trim();
+				if (!trimmed || trimmed.startsWith('#')) return;
+				const idx = trimmed.indexOf('=');
+				if (idx < 0) return;
+				const key = trimmed.slice(0, idx).trim();
+				const val = trimmed.slice(idx + 1).trim();
+				if (key) result[key] = val;
+			});
+			return result;
+		}
+
 		function updateLocalStorage() {
 			localStorage.setItem('aPro', JSON.stringify(aPro));
-			
-	if (typeof window.jsyaml !== 'undefined') {
-						const yamlString = window.jsyaml.dump(aPro);
-					if (JSON.stringify(aPro) === '{}' || typeof JSON.stringify(aPro) === 'undefined') {
-						$('#aProOutputYaml').val('').hide();
-						$('#copyBtn').hide();
-						$('#viewBtn').hide();
-						resetCopyButtonLabel();
-					} else {
-						$('#aProOutputYaml').val(yamlString);
-						$('#copyBtn').show();
-						$('#viewBtn').show();
-						resetCopyButtonLabel();
-					}
-				}
+			const isEmpty = JSON.stringify(aPro) === '{}';
+			if (isEmpty) {
+				$('#aProOutputYaml').val('').hide();
+				$('#copyBtn').hide();
+				$('#viewBtn').hide();
+				resetCopyButtonLabel();
+			} else {
+				$('#copyBtn').show();
+				$('#viewBtn').show();
+				resetCopyButtonLabel();
+				$('#aProOutputYaml').val(toEnvFormat(aPro));
+			}
 			applyYamlVisibility();
 			resizeYamlOutput();
 		}
@@ -225,13 +240,13 @@
 		}
 
 		function updateSaveBtn() {
-			const provider = $('#apiProvider1').val();
+			const provider = $('#apiProviderMenu').val();
 			const key = $('#apiKey1').val().trim();
 			$('#addApi').toggle(!!(provider && key));
 		}
 
 		function clearInputRow() {
-			$('#apiProvider1').val('');
+			$('#apiProviderMenu').val('');
 			$('#apiKey1').val('');
 			$('#apiProviderOther1').val('').hide();
 			$('#apiKeyField1').hide();
@@ -300,15 +315,14 @@
 			}
 		}
 
-		function hasDuplicateKeys(yamlString) {
-			const lines = yamlString.split('\n');
+		function hasDuplicateKeys(envString) {
+			const lines = envString.split('\n');
 			const seenKeys = {};
 			for (let i = 0; i < lines.length; i++) {
 				const line = lines[i].trim();
 				if (line && line[0] !== '#') {
-					const keyValue = line.split(':');
-					const key = keyValue[0].trim();
-					if (seenKeys[key]) {
+					const key = line.slice(0, line.indexOf('=')).trim();
+					if (key && seenKeys[key]) {
 						return true;
 					}
 					seenKeys[key] = true;
@@ -319,14 +333,10 @@
 
 		function updateKeyStorage() {
 			if (hasDuplicateKeys($('#aProOutputYaml').val())) {
-				alert('Duplicate provides. Please add (2) after second instance.');
+				alert('Duplicate providers. Please add (2) after second instance.');
 				return;
 			}
-			if (typeof window.jsyaml === 'undefined') {
-				alert('YAML parser not loaded yet.');
-				return;
-			}
-			aPro = window.jsyaml.load($('#aProOutputYaml').val()) || {};
+			aPro = parseEnvFormat($('#aProOutputYaml').val());
 			updateLocalStorage();
 			ensureSingleInputRow();
 		}
@@ -339,12 +349,12 @@
 		(function() {
 			const saved = localStorage.getItem('ae_provider1');
 			if (!saved) return;
-			$('#apiProvider1').val(saved);
+			$('#apiProviderMenu').val(saved);
 			if (saved === 'Other') $('#apiProviderOther1').show();
 		}());
 
 		$host.on('click', '#addApi', function() {
-			let provider = $('#apiProvider1').val();
+			let provider = $('#apiProviderMenu').val();
 			if (provider === 'Other') {
 				provider = $('#apiProviderOther1').val().trim();
 			}
@@ -361,27 +371,20 @@
 			updateSaveBtn();
 		});
 
-		$host.on('change', 'select[id^="apiProvider"]', function() {
-			const indexMatch = this.id.match(/\d+/);
-			if (!indexMatch) {
-				return;
-			}
-			const index = indexMatch[0];
+		$host.on('change', '#apiProviderMenu', function() {
 			const newKey = $(this).val();
 			if (newKey === 'Other') {
-				$('#apiProviderOther' + index).show();
+				$('#apiProviderOther1').show();
 			} else {
-				$('#apiProviderOther' + index).hide();
+				$('#apiProviderOther1').hide();
 			}
 			if (newKey) {
-				$('#apiKeyField' + index).show();
+				$('#apiKeyField1').show();
 			} else {
-				$('#apiKeyField' + index).hide();
-				$('#apiKey' + index).val('').attr('class', 'textInput hiddenInput');
+				$('#apiKeyField1').hide();
+				$('#apiKey1').val('').attr('class', 'textInput hiddenInput');
 			}
-			if (index === '1') {
-				localStorage.setItem('ae_provider1', newKey);
-			}
+			localStorage.setItem('ae_provider1', newKey);
 			updateSaveBtn();
 		});
 
@@ -474,6 +477,9 @@
 			const visible = yaml.is(':visible');
 			yaml.toggle(!visible);
 			$(this).text(visible ? 'View' : 'Hide');
+			if (!visible) {
+				requestAnimationFrame(resizeYamlOutput);
+			}
 		});
 
 		$host.on('click', '.ae-close-agents', function() {
