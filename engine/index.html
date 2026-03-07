@@ -52,7 +52,7 @@ param.showsearch = "false";
 
   // Storyboard builder
   const title    = cfg.title    || 'Arts Engine';
-  const subtitle = cfg.subtitle || 'Video, image & text generation via X.ai, Gemini, OpenAI APIs';
+  const subtitle = cfg.subtitle || 'Video, image & text generation via xAI, Claude, Gemini, OpenAI APIs';
   const icon     = cfg.icon     || 'auto_awesome';
 
   document.title = title + ' — X.ai Storyboard Generator';
@@ -92,8 +92,6 @@ param.showsearch = "false";
 }
 .ae-model-section {
   flex: 0 0 100%;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 8px;
 }
 </style>
 </head>
@@ -107,9 +105,9 @@ param.showsearch = "false";
       <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">auto_awesome</span>Arts Engine
     </h1>
     <span style="margin:0; color:#888; font-size:0.95rem" id="ae-subtitle">
-      Video, image &amp; text generation via X.ai, Gemini, OpenAI APIs <!-- · Storyboard Builder -->
+      Video, image &amp; text generation via xAI, Claude, Gemini, OpenAI APIs <!-- · Storyboard Builder -->
     </span>
-    - <a href='rust-api/src/providers'>providers</a><br>
+    - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
 
     <div class="ae-backend-status" style="margin-top:8px">
       <span class="ae-backend-dot checking" id="backendDot"></span>
@@ -130,33 +128,77 @@ param.showsearch = "false";
 
       <!-- Prompt Input Panel -->
       <div class="ae-panel" id="promptPanel">
-        <h3>Prompt</h3>
-        <textarea id="promptInput"
-          placeholder="Enter an image or text prompt… (Ctrl+Enter to generate)&#10;&#10;Example: A honey bee near wildflowers at golden hour, photorealistic"></textarea>
+        <h3>Generate</h3>
+        <div class="ae-output-controls">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;width:100%">
+            <div class="ae-type-row">
+              <button class="ae-type-btn" data-type="text">
+                <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">text_snippet</span>
+                Text
+              </button>
+              <button class="ae-type-btn active" data-type="image">
+                <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">image</span>
+                Image
+              </button>
+              <button class="ae-type-btn" data-type="video">
+                <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">videocam</span>
+                Video
+              </button>
+            </div>
 
-        <!-- CSV upload row -->
-        <div class="ae-csv-row">
-          <label class="ae-csv-btn" for="csvFileInput"
-            title="Load prompts from a CSV with a 'Prompt' column. Drag &amp; drop also works.">
-            <span class="material-icons" style="font-size:1rem">upload_file</span>
-            Load CSV
+            <div class="ae-variations-row" style="margin-top:0;align-self:center">
+              <label for="variationsInput">Variations:</label>
+              <input type="number" id="variationsInput" min="1" max="4" value="2">
+            </div>
+          </div>
+        </div>
+        <textarea id="promptInput"
+          placeholder="Enter a prompt… (Ctrl+Enter to generate)"></textarea>
+        <p style="margin:6px 0 10px;font-size:0.8rem;color:#aaa">Example: A honey bee near wildflowers at golden hour, photorealistic</p>
+
+        <div style="margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button id="generateBtn">
+            <span class="material-icons">auto_awesome</span>
+            <span id="generateBtnLabel">Generate</span>
+          </button>
+          <label id="selectedSceneLabel" style="display:none;align-items:center;font-size:0.85rem;color:#888;cursor:pointer">
+            <input type="checkbox" id="selectedSceneCheck" checked style="cursor:pointer;margin-right:4px"><span>Scene: <span id="selectedSceneName"></span></span>
           </label>
-          <input type="file" id="csvFileInput" accept=".csv" style="display:none">
-          <span class="ae-csv-name" id="csvFileName">No file loaded</span>
-          <span style="flex:1"></span>
-          <button class="ae-csv-btn" onclick="artsEngine && artsEngine.addScene()"
-            title="Add current prompt as a new scene">
-            <span class="material-icons" style="font-size:1rem">add</span>
-            Add Scene
-          </button>
-          <button class="ae-csv-btn" id="clearPromptsBtn" title="Clear all scenes">
-            <span class="material-icons" style="font-size:1rem">clear_all</span>
-            Clear
-          </button>
+          <a id="adjustPromptLink" href="#" style="display:none;font-size:0.8rem;color:#4a90e2;text-decoration:none" onclick="artsEngine.toggleSceneUsage(event)">Adjust Prompt</a>
         </div>
 
-        <!-- Loaded prompts list (populated by JS) -->
-        <div id="promptList"></div>
+        <!-- Scene column usage — revealed by "Adjust Prompt" link -->
+        <div id="sceneColumnUsage" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid rgba(74,144,226,0.25);border-radius:8px;background:rgba(74,144,226,0.04);font-size:0.82rem">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:4px;color:#888">Mode:
+              <select id="sceneMode" onchange="artsEngine.updatePromptPreview()" style="font-size:0.8rem;padding:2px 20px 2px 5px;border-radius:4px;border:1px solid #ccc">
+                <option value="append">Append to prompt</option>
+                <option value="template">Template — use {column} in prompt</option>
+                <option value="replace">Replace prompt</option>
+              </select>
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;color:#888">Format:
+              <select id="sceneFormat" onchange="artsEngine.updatePromptPreview()" style="font-size:0.8rem;padding:2px 20px 2px 5px;border-radius:4px;border:1px solid #ccc">
+                <option value="keyval">Key: value</option>
+                <option value="bullets">Bullet list</option>
+                <option value="json">JSON</option>
+                <option value="inline">Inline</option>
+              </select>
+            </label>
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <button class="ae-csv-btn" onclick="artsEngine.selectSceneCols('universal')" style="font-size:0.75rem;padding:2px 8px">Universal</button>
+              <button class="ae-csv-btn" onclick="artsEngine.selectSceneCols('all')" style="font-size:0.75rem;padding:2px 8px">All</button>
+              <button class="ae-csv-btn" onclick="artsEngine.selectSceneCols('none')" style="font-size:0.75rem;padding:2px 8px">None</button>
+            </div>
+          </div>
+          <div id="sceneColumnList"></div>
+        </div>
+
+        <div id="scenePromptPreview" style="display:none;margin:0 0 10px;font-size:0.82rem">
+          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">Appended to prompt:</div>
+          <pre id="scenePromptPreviewText" style="margin:0;padding:8px;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.08);border-radius:4px;font-size:0.78rem;white-space:pre-wrap;word-break:break-word;max-height:120px;overflow-y:auto;color:#444"></pre>
+        </div>
+
       </div>
 
       <!-- Aspect Ratio Selector -->
@@ -217,42 +259,12 @@ param.showsearch = "false";
               <select id="providerSelect" class="ae-model-select" title="AI Provider"></select>
               <select id="modelSelect" class="ae-model-select" title="Model"></select>
             </div>
-            <a href="#" id="toggleAgentsEditor" class="btn btn-nice" style="margin-left:auto">Add</a>
+            <a href="#" id="toggleAgentsEditor" class="btn btn-nice" style="margin-left:auto">My Model Keys</a>
           </div>
 
-          <div id="agentsContainer" style="display:none; flex:0 0 100%; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid #ccc;"></div>
+          <div id="agentsContainer" style="display:none; flex:0 0 100%; padding-bottom:12px; margin-bottom:12px;"></div>
 
-          <div class="ae-output-controls">
-            <h3>Output</h3>
-            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px">
-              <div class="ae-type-row">
-                <button class="ae-type-btn active" data-type="image">
-                  <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">image</span>
-                  Image
-                </button>
-                <button class="ae-type-btn" data-type="text">
-                  <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">text_fields</span>
-                  Text
-                </button>
-                <button class="ae-type-btn" data-type="video">
-                  <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">videocam</span>
-                  Video
-                </button>
-              </div>
-              <div class="ae-variations-row" style="margin-top:0;align-self:center">
-                <label for="variationsInput">Variations:</label>
-                <input type="number" id="variationsInput" min="1" max="4" value="2">
-              </div>
-            </div>
-          </div>
 
-        </div>
-
-        <div style="margin-top:14px">
-          <button id="generateBtn">
-            <span class="material-icons">auto_awesome</span>
-            Generate
-          </button>
         </div>
 
         <div id="statusBar" style="display:none"></div>
@@ -265,9 +277,33 @@ param.showsearch = "false";
           Storyboard Flow
         </h3>
         <p style="margin:0 0 12px 0;font-size:0.85rem;color:#888">
-          ComfyUI-style scene graph — load a CSV or add scenes above
+          Load a new CSV, or click a scene row below from our <a href="../../data-pipeline/admin">data-pipeline flow</a>.
         </p>
         <div id="storyboardContainer"></div>
+
+        <!-- CSV upload row -->
+        <div class="ae-csv-row">
+          <label class="ae-csv-btn" for="csvFileInput"
+            title="Load prompts from a CSV with a 'Prompt' column. Drag &amp; drop also works.">
+            <span class="material-icons" style="font-size:1rem">upload_file</span>
+            Load CSV
+          </label>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+          <span class="ae-csv-name" id="csvFileName">No file loaded</span>
+          <span style="flex:1"></span>
+          <button class="ae-csv-btn" onclick="artsEngine && artsEngine.addScene()"
+            title="Add current prompt as a new scene">
+            <span class="material-icons" style="font-size:1rem">add</span>
+            Add Scene
+          </button>
+          <button class="ae-csv-btn" id="clearPromptsBtn" title="Clear all scenes">
+            <span class="material-icons" style="font-size:1rem">clear_all</span>
+            Clear
+          </button>
+        </div>
+
+        <!-- Loaded prompts list (populated by JS) -->
+        <div id="promptList"></div>
       </div>
 
       <!-- Gallery Panel (revealed after first generation) -->
@@ -383,9 +419,10 @@ param.showsearch = "false";
   </div><!-- /ae-container -->
 
 
-  <script type="text/javascript" src="../../localsite/js/embed.js?showindex=1&showheader=true"></script>
+  <script type="text/javascript" src="../../localsite/js/embed.js?map=airports&showindex=1&showheader=true"></script>
   <div id="listwidget"></div>
 
+  <p style="margin:20px 0;text-align:center"><a href="../">About our Engine</a></p>
 </div><!-- /content -->
 
 <!-- Lightbox overlay (full-screen image view, Escape or click outside to close) -->

@@ -17,6 +17,7 @@ class ArtsEngine {
     this.scenes = [];         // Array of {scene, prompt, industry, naics, count, image, text}
     this.results = [];        // Generated images/text
     this.generating = false;
+    this.selectedSceneIdx = null;
     this.lastRaw = null;
     this._healthRunning = false;
     this._lastActivity = Date.now();
@@ -84,6 +85,7 @@ class ArtsEngine {
     this.restorePrefs();
     this.renderStoryboard();
     this.initGitHubWidget();
+    this.loadDefaultCSV();
   }
 
   // -------------------------------------------------------------------------
@@ -121,6 +123,8 @@ class ArtsEngine {
     document.getElementById('promptInput')?.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') this.generate();
     });
+    // Live prompt preview update as user types
+    document.getElementById('promptInput')?.addEventListener('input', () => this.updatePromptPreview());
 
     // CSV file upload
     document.getElementById('csvFileInput')?.addEventListener('change', e => {
@@ -157,6 +161,18 @@ class ArtsEngine {
     });
 
     // Output type buttons (skip disabled)
+    const updateOutputTypeUI = (type) => {
+      const label = document.getElementById('generateBtnLabel');
+      const input = document.getElementById('promptInput');
+      const typeLabels = { image: 'Image', text: 'Text', video: 'Video' };
+      const typeLabel = typeLabels[type] || 'Image';
+      if (label) {
+        const btnLabels = { image: 'Create Image', text: 'Create Text', video: 'Create Video' };
+        label.textContent = btnLabels[type] || 'Generate';
+      }
+      if (input) input.placeholder = `Enter a prompt for your ${typeLabel.toLowerCase()}… (Ctrl+Enter to generate)`;
+    };
+
     document.querySelectorAll('.ae-type-btn').forEach(btn => {
       if (btn.classList.contains('disabled')) return;
       btn.addEventListener('click', () => {
@@ -165,8 +181,10 @@ class ArtsEngine {
         this.prefs.outputType = btn.dataset.type;
         this.savePref('outputType', this.prefs.outputType);
         this.updateModelRowVisibility();
+        updateOutputTypeUI(this.prefs.outputType);
       });
     });
+    updateOutputTypeUI(this.prefs.outputType);
 
     // Model selector — save per-provider so each provider remembers its last model
     document.getElementById('modelSelect')?.addEventListener('change', e => {
@@ -201,6 +219,21 @@ class ArtsEngine {
       if (e.key === 'Escape') this.closeLightbox();
     });
 
+    // Scene checkbox: hide adjust link + panel when unchecked
+    document.getElementById('selectedSceneCheck')?.addEventListener('change', e => {
+      const adjustLink = document.getElementById('adjustPromptLink');
+      const usage      = document.getElementById('sceneColumnUsage');
+      if (e.target.checked) {
+        if (adjustLink) adjustLink.style.display = '';
+        this.updatePromptPreview();
+      } else {
+        if (adjustLink) { adjustLink.style.display = 'none'; }
+        if (usage)      { usage.style.display = 'none'; }
+        const link = document.getElementById('adjustPromptLink');
+        if (link) link.textContent = 'Adjust Prompt';
+      }
+    });
+
     // Backend URL override in settings
     document.getElementById('apiBaseInput')?.addEventListener('change', e => {
       this.apiBase = e.target.value.trim().replace(/\/$/, '') + '/api';
@@ -225,9 +258,29 @@ class ArtsEngine {
       this.scenes = parsed;
       this.renderPromptList();
       this.renderStoryboard();
+      this.selectScene(0);
       this.setStatus('success', `Loaded ${parsed.length} prompt${parsed.length !== 1 ? 's' : ''} from ${file.name}`);
     } catch (err) {
       this.setStatus('error', 'Failed to parse CSV: ' + err.message);
+    }
+  }
+
+  async loadDefaultCSV() {
+    const url = 'https://raw.githubusercontent.com/ModelEarth/data-pipeline/refs/heads/main/nodes.csv';
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return;
+      const text = await resp.text();
+      const parsed = this.parseCSVClientSide(text);
+      if (!parsed.length) return;
+      this.scenes = parsed;
+      const nameEl = document.getElementById('csvFileName');
+      if (nameEl) nameEl.textContent = 'nodes.csv';
+      this.renderPromptList();
+      this.renderStoryboard();
+      this.selectScene(0);
+    } catch (err) {
+      // silently skip if fetch fails
     }
   }
 
@@ -237,6 +290,8 @@ class ArtsEngine {
     const headers = this.parseCSVRow(lines[0]).map(h => h.trim().toLowerCase());
     const col = name => headers.indexOf(name);
     const promptIdx   = col('prompt');
+    const nameIdx     = col('name');
+    const nodeIdIdx   = col('node_id');
     const industryIdx = col('industry');
     const countIdx    = col('count');
     const naicsIdx    = col('naics');
@@ -249,14 +304,20 @@ class ArtsEngine {
       if (!row.length) continue;
       const promptText = (promptIdx >= 0 ? row[promptIdx] : row[0])?.trim();
       if (!promptText) continue;
+      // Store all CSV columns in raw for dynamic scene usage
+      const raw = {};
+      headers.forEach((h, j) => { if (h) raw[h] = (row[j] || '').trim(); });
       results.push({
         scene:        sceneIdx >= 0 ? row[sceneIdx]?.trim() : String(i),
+        name:         nameIdx >= 0 ? row[nameIdx]?.trim() : '',
+        node_id:      nodeIdIdx >= 0 ? row[nodeIdIdx]?.trim() : '',
         prompt:       promptText,
         industry:     industryIdx >= 0 ? row[industryIdx]?.trim() : '',
         count:        countIdx >= 0    ? row[countIdx]?.trim()    : '',
         naics:        naicsIdx >= 0    ? row[naicsIdx]?.trim()    : '',
         aspect_ratio: ratioIdx >= 0    ? row[ratioIdx]?.trim()    : '',
         style:        styleIdx >= 0    ? row[styleIdx]?.trim()    : '',
+        raw,
         image: null, text: null,
       });
     }
@@ -290,25 +351,39 @@ class ArtsEngine {
     const list = document.getElementById('promptList');
     if (!list) return;
     if (!this.scenes.length) { list.innerHTML = ''; return; }
-    list.innerHTML = this.scenes.map((s, idx) => `
+    list.innerHTML = this.scenes.map((s, idx) => {
+      const displayName = s.name
+        ? this.escapeHtml(s.name) + (s.node_id ? ` <span style="opacity:0.55">(${this.escapeHtml(s.node_id)})</span>` : '')
+        : this.escapeHtml(s.prompt);
+      return `
       <div class="prompt-item" data-idx="${idx}" onclick="artsEngine.selectScene(${idx})">
-        <div class="prompt-item-num">${s.scene || idx + 1}</div>
+        <div class="prompt-item-num">${idx + 1}</div>
         <div style="flex:1">
-          <div class="prompt-item-text">${this.escapeHtml(s.prompt)}</div>
+          <div class="prompt-item-text">${displayName}</div>
           ${s.industry ? `<div class="prompt-item-industry">${this.escapeHtml(s.industry)}</div>` : ''}
         </div>
         <button class="ae-csv-btn" style="padding:2px 8px;font-size:0.8rem"
           onclick="event.stopPropagation();artsEngine.removeScene(${idx})" title="Remove">×</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   selectScene(idx) {
     const scene = this.scenes[idx];
     if (!scene) return;
-    const ta = document.getElementById('promptInput');
-    if (ta) ta.value = scene.prompt;
+    this.selectedSceneIdx = idx + 1;
     document.querySelectorAll('.prompt-item').forEach((el, i) =>
       el.classList.toggle('selected', i === idx));
+    const sceneLabel = document.getElementById('selectedSceneLabel');
+    const nameEl = document.getElementById('selectedSceneName');
+    if (sceneLabel) sceneLabel.style.display = 'flex';
+    if (nameEl) {
+      const displayName = scene.name || scene.industry || scene.scene || String(idx + 1);
+      nameEl.textContent = scene.node_id ? `${displayName} (${scene.node_id})` : displayName;
+    }
+    const adjustLink = document.getElementById('adjustPromptLink');
+    if (adjustLink) adjustLink.style.display = '';
+    this.renderSceneColumnList(scene);
 
     // Apply scene's aspect_ratio if specified
     if (scene.aspect_ratio) {
@@ -328,8 +403,10 @@ class ArtsEngine {
 
   removeScene(idx) {
     this.scenes.splice(idx, 1);
+    this.selectedSceneIdx = this.scenes.length ? 1 : null;
     this.renderPromptList();
     this.renderStoryboard();
+    if (this.selectedSceneIdx === 0 && this.scenes.length) this.selectScene(0);
   }
 
   addScene() {
@@ -348,11 +425,139 @@ class ArtsEngine {
 
   clearScenes() {
     this.scenes = [];
+    this.selectedSceneIdx = null;
+    const label = document.getElementById('selectedSceneLabel');
+    if (label) label.style.display = 'none';
+    const adjustLink = document.getElementById('adjustPromptLink');
+    if (adjustLink) { adjustLink.style.display = 'none'; adjustLink.textContent = 'Adjust Prompt'; }
+    const usage = document.getElementById('sceneColumnUsage');
+    if (usage) usage.style.display = 'none';
     this.renderPromptList();
     this.renderStoryboard();
     const ta = document.getElementById('promptInput');
     if (ta) ta.value = '';
     this.setStatus('', '');
+  }
+
+  // -------------------------------------------------------------------------
+  // Scene column usage
+  // -------------------------------------------------------------------------
+
+  static get UNIVERSAL_COLS() {
+    return ['name', 'description'];
+  }
+
+  renderSceneColumnList(scene) {
+    const list = document.getElementById('sceneColumnList');
+    if (!list || !scene.raw) return;
+    const UNIVERSAL = ArtsEngine.UNIVERSAL_COLS;
+    const entries = Object.entries(scene.raw).filter(([, v]) => v !== '');
+    const universals = entries.filter(([k]) => UNIVERSAL.includes(k))
+      .sort(([a], [b]) => UNIVERSAL.indexOf(a) - UNIVERSAL.indexOf(b));
+    const others = entries.filter(([k]) => !UNIVERSAL.includes(k))
+      .sort(([a], [b]) => a.localeCompare(b));
+
+    const colRow = (key, val, checked) => {
+      const preview = String(val).length > 40 ? String(val).slice(0, 40) + '…' : String(val);
+      return `<label style="display:flex;align-items:baseline;gap:5px;cursor:pointer;padding:2px 0">
+        <input type="checkbox" ${checked ? 'checked' : ''} data-col="${this.escapeHtml(key)}" style="flex-shrink:0;margin-top:2px;cursor:pointer">
+        <span>
+          <span style="font-weight:${checked ? '600' : '400'};color:${checked ? '#4a90e2' : 'inherit'}">${this.escapeHtml(key)}</span>
+          <span style="color:#aaa;font-size:0.75rem;margin-left:4px" title="${this.escapeHtml(String(val))}">${this.escapeHtml(preview)}</span>
+        </span>
+      </label>`;
+    };
+
+    const grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px';
+    list.innerHTML = `
+      <div style="${grid}">${universals.map(([k, v]) => colRow(k, v, true)).join('')}</div>
+      ${others.length ? `
+        <div style="margin-top:8px">
+          <a id="chooseColsLink" href="#" style="font-size:0.8rem;color:#4a90e2;text-decoration:none"
+            onclick="artsEngine.toggleNonUniversalCols(event)">Choose columns ▶</a>
+          <div id="sceneNonUniversalCols" style="display:none;margin-top:6px;${grid}">
+            ${others.map(([k, v]) => colRow(k, v, false)).join('')}
+          </div>
+        </div>` : ''}`;
+
+    list.querySelectorAll('input[type=checkbox]').forEach(cb =>
+      cb.addEventListener('change', () => this.updatePromptPreview()));
+    this.updatePromptPreview();
+  }
+
+  toggleNonUniversalCols(event) {
+    event.preventDefault();
+    const cols = document.getElementById('sceneNonUniversalCols');
+    const link = document.getElementById('chooseColsLink');
+    if (!cols) return;
+    const open = cols.style.display === 'none';
+    cols.style.display = open ? '' : 'none';
+    if (link) link.textContent = open ? 'Choose columns ▼' : 'Choose columns ▶';
+  }
+
+  toggleSceneUsage(event) {
+    event.preventDefault();
+    const usage = document.getElementById('sceneColumnUsage');
+    const link  = document.getElementById('adjustPromptLink');
+    if (!usage) return;
+    const open = usage.style.display === 'none';
+    usage.style.display = open ? '' : 'none';
+    if (link) link.textContent = open ? 'Close' : 'Adjust Prompt';
+    if (open) this.updatePromptPreview();
+  }
+
+  updatePromptPreview() {
+    const preview     = document.getElementById('scenePromptPreview');
+    const previewText = document.getElementById('scenePromptPreviewText');
+    if (!preview || !previewText) return;
+    const checked = document.getElementById('selectedSceneCheck')?.checked;
+    const idx     = (this.selectedSceneIdx ?? 1) - 1;
+    const scene   = this.scenes[idx];
+    if (!scene || !checked) { preview.style.display = 'none'; return; }
+    const combined   = this.buildCombinedPrompt('', scene);
+    if (combined) {
+      preview.style.display = '';
+      previewText.textContent = combined;
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  selectSceneCols(mode) {
+    const UNIVERSAL = ArtsEngine.UNIVERSAL_COLS;
+    document.querySelectorAll('#sceneColumnList input[type=checkbox]').forEach(cb => {
+      if (mode === 'all')       cb.checked = true;
+      else if (mode === 'none') cb.checked = false;
+      else                      cb.checked = UNIVERSAL.includes(cb.dataset.col);
+    });
+    this.updatePromptPreview();
+  }
+
+  buildCombinedPrompt(userPrompt, scene) {
+    const mode   = document.getElementById('sceneMode')?.value   || 'append';
+    const format = document.getElementById('sceneFormat')?.value || 'keyval';
+    const checked = [];
+    document.querySelectorAll('#sceneColumnList input[type=checkbox]:checked').forEach(cb => {
+      const val = scene.raw?.[cb.dataset.col];
+      if (val) checked.push([cb.dataset.col, val]);
+    });
+    if (!checked.length) return userPrompt || scene.prompt || '';
+
+    let sceneData;
+    if (format === 'bullets')  sceneData = checked.map(([k, v]) => `• ${k}: ${v}`).join('\n');
+    else if (format === 'json') sceneData = JSON.stringify(Object.fromEntries(checked), null, 2);
+    else if (format === 'inline') sceneData = checked.map(([k, v]) => `${k}=${v}`).join(', ');
+    else                        sceneData = checked.map(([k, v]) => `${k}: ${v}`).join('\n');
+
+    if (mode === 'replace')  return sceneData;
+    if (mode === 'template') {
+      if (!userPrompt) return sceneData;
+      let result = userPrompt;
+      checked.forEach(([k, v]) => { result = result.replace(new RegExp(`\\{${k}\\}`, 'g'), v); });
+      return result;
+    }
+    // default: append
+    return userPrompt ? `${userPrompt}\n\n${sceneData}` : sceneData;
   }
 
   // -------------------------------------------------------------------------
@@ -562,11 +767,20 @@ class ArtsEngine {
     if (window.AE_API_BASE) this.apiBase = window.AE_API_BASE.replace(/\/$/, '') + '/api';
     if (this.generating) return;
     const singlePrompt = document.getElementById('promptInput')?.value.trim();
-    const promptsToRun = this.scenes.length
-      ? this.scenes.map(s => ({ ...s }))
-      : singlePrompt
-        ? [{ scene: '1', prompt: singlePrompt, aspect_ratio: '', style: '', image: null, text: null }]
-        : null;
+    const useScene = document.getElementById('selectedSceneCheck')?.checked && this.scenes.length > 0;
+    let promptsToRun;
+    if (this.scenes.length) {
+      const idx = (this.selectedSceneIdx ?? 1) - 1;
+      const scene = this.scenes[idx];
+      if (scene) {
+        const prompt = useScene
+          ? this.buildCombinedPrompt(singlePrompt, scene)
+          : (singlePrompt || scene.prompt);
+        promptsToRun = [{ ...scene, prompt }];
+      }
+    } else if (singlePrompt) {
+      promptsToRun = [{ scene: '1', prompt: singlePrompt, aspect_ratio: '', style: '', image: null, text: null }];
+    }
 
     if (!promptsToRun) { this.setStatus('error', 'Enter a prompt or load a CSV file first'); return; }
 
@@ -575,26 +789,27 @@ class ArtsEngine {
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="ae-spinner"></span> Generating…'; }
 
     try {
-      if (promptsToRun.length > 1 && this.prefs.outputType === 'image') {
-        await this.generateStoryboard(promptsToRun);
+      const scene = promptsToRun[0];
+      if (this.prefs.outputType === 'image') {
+        for (let v = 0; v < this.prefs.variations; v++) {
+          this.setStatus('info', this.prefs.variations > 1
+            ? `Generating image ${v + 1} of ${this.prefs.variations}`
+            : 'Generating image');
+          await this.generateImage(scene, (this.selectedSceneIdx ?? 1) - 1);
+        }
+      } else if (this.prefs.outputType === 'video') {
+        for (let v = 0; v < this.prefs.variations; v++) {
+          this.setStatus('info', this.prefs.variations > 1
+            ? `Submitting video ${v + 1} of ${this.prefs.variations}`
+            : 'Submitting video');
+          await this.generateVideo(scene, (this.selectedSceneIdx ?? 1) - 1);
+        }
       } else {
-        for (let i = 0; i < promptsToRun.length; i++) {
-          this.setStatus('info', `Generating ${i + 1} of ${promptsToRun.length}…`);
-          if (this.prefs.outputType === 'image') {
-            for (let v = 0; v < this.prefs.variations; v++) {
-              if (this.prefs.variations > 1)
-                this.setStatus('info', `Scene ${i + 1}, variation ${v + 1} of ${this.prefs.variations}…`);
-              await this.generateImage(promptsToRun[i], i);
-            }
-          } else if (this.prefs.outputType === 'video') {
-            for (let v = 0; v < this.prefs.variations; v++) {
-              if (this.prefs.variations > 1)
-                this.setStatus('info', `Submitting video variation ${v + 1} of ${this.prefs.variations}…`);
-              await this.generateVideo(promptsToRun[i], i);
-            }
-          } else {
-            await this.generateText(promptsToRun[i], i);
-          }
+        for (let v = 0; v < this.prefs.variations; v++) {
+          this.setStatus('info', this.prefs.variations > 1
+            ? `Generating text ${v + 1} of ${this.prefs.variations}`
+            : 'Generating text');
+          await this.generateText(scene, (this.selectedSceneIdx ?? 1) - 1);
         }
       }
       this.setStatus('success', 'Generation complete!');
