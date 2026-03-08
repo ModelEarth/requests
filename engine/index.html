@@ -25,7 +25,7 @@ param.showsearch = "false";
   Inline fallback text in the HTML elements renders instantly if fetch is slow.
 -->
 <script>
-(async function applyConfig() {
+window.AE_CONFIG_PROMISE = (async function applyConfig() {
   function parseYaml(text) {
     const cfg = {};
     text.split('\n').forEach(line => {
@@ -156,7 +156,7 @@ param.showsearch = "false";
           placeholder="Enter a prompt… (Ctrl+Enter to generate)"></textarea>
         <p style="margin:6px 0 10px;font-size:0.8rem;color:#aaa">Example: A honey bee near wildflowers at golden hour, photorealistic</p>
 
-        <div style="margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <button id="generateBtn">
             <span class="material-icons">auto_awesome</span>
             <span id="generateBtnLabel">Generate</span>
@@ -259,10 +259,34 @@ param.showsearch = "false";
           <div class="ae-model-section">
             <h3 class="ae-model-label">Model</h3>
             <div id="modelRow" style="display:flex;gap:8px;align-items:center">
-              <select id="providerSelect" class="ae-model-select" title="AI Provider"></select>
-              <select id="modelSelect" class="ae-model-select" title="Model"></select>
+              <select id="providerSelect" class="ae-model-select" title="AI Provider" style="opacity:0"></select>
+              <select id="modelSelect" class="ae-model-select" title="Model" style="opacity:0"></select>
             </div>
-            <a href="#" id="toggleAgentsEditor" class="btn btn-nice" style="margin-left:auto">My Model Keys</a>
+            <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+              <span class="material-icons" id="toggleSettingsBtn" title="Settings"
+                style="cursor:pointer;color:#888;font-size:1.3rem;vertical-align:middle"
+                onclick="toggleSettingsContainer(event)">settings</span>
+              <a href="#" id="toggleAgentsEditor" class="btn btn-nice">My Model Keys</a>
+            </div>
+          </div>
+
+          <div id="settingsContainer" style="display:none;flex:0 0 100%;">
+            <div class="ae-settings-row">
+              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
+                <strong>Backend URL:</strong><br>
+                <code id="apiBaseInput" style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">http://localhost:8082</code>
+              </div>
+              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
+                <strong>Start Rust backend:</strong><br>
+                <code style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">
+                  cd rust-api &amp;&amp; cargo run
+                </code>
+              </div>
+              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
+                Add <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">XAI_API_KEY</code>
+                to <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">docker/.env</code>
+              </div>
+            </div>
           </div>
 
           <div id="agentsContainer" style="display:none; flex:0 0 100%; padding-bottom:12px; margin-bottom:12px;"></div>
@@ -361,31 +385,6 @@ param.showsearch = "false";
         </button>
       </div>
 
-      <!-- Settings Panel -->
-      <div class="ae-panel">
-        <h3>
-          <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">settings</span>
-          Settings
-        </h3>
-        <div class="ae-settings-row">
-          <label>
-            Backend URL
-            <input type="text" id="apiBaseInput" value="http://localhost:8082"
-              style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;
-                     font-size:0.85rem;width:100%;box-sizing:border-box">
-          </label>
-          <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
-            <strong>Start Rust backend:</strong><br>
-            <code style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">
-              cd rust-api &amp;&amp; cargo run
-            </code>
-          </div>
-          <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
-            Add <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">XAI_API_KEY</code>
-            to <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">docker/.env</code>
-          </div>
-        </div>
-      </div>
 
 
       <!-- API Reference -->
@@ -395,9 +394,12 @@ param.showsearch = "false";
           API Reference
         </h3>
         <ul style="margin:0;margin-bottom:10px;padding-left:16px;color:#888;line-height:1.9">
-          <li><a href="https://docs.x.ai/docs" target="_blank">X.ai API Docs</a></li>
-          <li><a href="https://docs.rs/api_xai/latest/api_xai/" target="_blank">api_xai Rust crate</a></li>
-          <li><a href="https://github.com/ModelEarth/requests" target="_blank">requests repo</a></li>
+          <li><a href="../">About Our Engine</a></li>
+          <li><a href="https://modelcontextprotocol.io/extensions/apps/build" target="_blank">Model Context Protocol</a></li>
+          <li><a href="https://github.com/modelcontextprotocol/servers" target="_blank">Official MCP Server Integrations</a></li>
+          <li><a href="https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop" target="_blank">Claude Desktop Local MCP Servers</a></li>
+          <li><a href="https://docs.x.ai/docs" target="_blank">Documentation for xAI API</a></li>
+          <li><a href="https://docs.rs/api_xai/latest/api_xai/" target="_blank">Rust Crate api_xai</a></li>
         </ul>
 
       </div>
@@ -426,6 +428,16 @@ param.showsearch = "false";
 <script type="text/javascript" src="js/app.js"></script>
 
 <script>
+function toggleSettingsContainer(event) {
+  event.preventDefault();
+  const c = document.getElementById('settingsContainer');
+  const btn = document.getElementById('toggleSettingsBtn');
+  if (!c) return;
+  const open = c.style.display === 'none';
+  c.style.display = open ? '' : 'none';
+  if (btn) btn.style.color = open ? '#4a90e2' : '#888';
+}
+
 // Sync backend URL input with config.yaml api_base once loaded
 document.addEventListener('DOMContentLoaded', function () {
   // Small delay to let the async config fetch settle

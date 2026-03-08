@@ -30,6 +30,7 @@ use crate::providers::{build_provider, build_provider_dynamic, GenerativeModel};
 #[derive(Clone)]
 struct AppState {
     provider: Arc<dyn GenerativeModel>,
+    available_providers: Vec<String>,
 }
 
 #[tokio::main]
@@ -42,7 +43,14 @@ async fn main() -> anyhow::Result<()> {
     let config = AppConfig::load()?;
     let provider = build_provider(&config)?;
 
-    let app_state = AppState { provider };
+    let mut available_providers: Vec<String> = Vec::new();
+    if !config.xai_api_key.is_empty()        { available_providers.push("xai".to_string()); }
+    if config.openai_api_key.is_some()        { available_providers.push("openai".to_string()); }
+    if config.gemini_api_key.is_some()        { available_providers.push("gemini".to_string()); }
+    if config.claude_api_key.is_some()
+        || config.anthropic_api_key.is_some() { available_providers.push("claude".to_string()); }
+
+    let app_state = AppState { provider, available_providers };
 
     let app = Router::new()
         .route("/api/health", get(health))
@@ -89,6 +97,7 @@ async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
     Json(HealthResponse {
         ok: true,
         provider: state.provider.provider_name().to_string(),
+        available_providers: state.available_providers.clone(),
         message: "Arts Engine API is ready".to_string(),
     })
 }

@@ -28,7 +28,7 @@ class ArtsEngine {
       ratio:      this.loadPref('ratio', 'square'),
       outputType: this.loadPref('outputType', 'image'),
       provider:   this.loadPref('provider', 'gemini'),
-      model:      this.loadPref('model', 'gemini-2.0-flash'),
+      model:      this.loadPref('model', 'gemini-1.5-flash'),
       variations: parseInt(this.loadPref('variations', '1')),
     };
 
@@ -56,7 +56,8 @@ class ArtsEngine {
       }
     };
 
-    setTimeout(runCheck, 50);
+    // Wait for config (sets window.AE_API_BASE) before first health check
+    (window.AE_CONFIG_PROMISE || Promise.resolve()).then(() => runCheck());
 
     // Track activity; restart health check if it had paused
     document.addEventListener('click', () => {
@@ -671,10 +672,10 @@ class ArtsEngine {
         { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
       ],
       gemini: [
+        { value: 'gemini-1.5-flash',              label: 'Gemini 1.5 Flash' },
+        { value: 'gemini-1.5-pro',                label: 'Gemini 1.5 Pro' },
         { value: 'gemini-2.0-flash',              label: 'Gemini 2.0 Flash' },
         { value: 'gemini-2.0-flash-thinking-exp', label: 'Gemini 2.0 Flash Thinking' },
-        { value: 'gemini-1.5-pro',                label: 'Gemini 1.5 Pro' },
-        { value: 'gemini-1.5-flash',              label: 'Gemini 1.5 Flash' },
       ],
       openai: [
         { value: 'gpt-4o',      label: 'GPT-4o' },
@@ -721,6 +722,7 @@ class ArtsEngine {
 
   initProviderSelector() {
     const KEY_MAP = {
+      'ANTHROPIC_API_KEY':   { id: 'claude',     label: 'Claude' },
       'CLAUDE_API_KEY':      { id: 'claude',     label: 'Claude' },
       'GEMINI_API_KEY':      { id: 'gemini',     label: 'Gemini' },
       'OPENAI_API_KEY':      { id: 'openai',     label: 'OpenAI' },
@@ -768,6 +770,15 @@ class ArtsEngine {
     });
 
     this.updateModelOptions();
+
+    // Reveal selects now only if the saved provider was already available
+    // (no .env lookup needed). Otherwise wait for checkBackendStatus to reveal.
+    if (match) this._revealProviderSelects();
+  }
+
+  _revealProviderSelects() {
+    document.getElementById('providerSelect')?.style && (document.getElementById('providerSelect').style.opacity = '');
+    document.getElementById('modelSelect')?.style && (document.getElementById('modelSelect').style.opacity = '');
   }
 
   updateModelOptions() {
@@ -1149,21 +1160,60 @@ class ArtsEngine {
         const data = await resp.json();
         if (dot) dot.className = 'ae-backend-dot online';
         if (label) label.textContent = data.provider ? `Backend online · ${data.provider} ready` : 'Backend online';
+        const LABELS = {
+          claude: 'Claude', gemini: 'Gemini', openai: 'OpenAI', xai: 'xAI',
+          groq: 'Groq', together: 'Together AI', fireworks: 'Fireworks AI',
+          mistral: 'Mistral', perplexity: 'Perplexity', deepseek: 'DeepSeek',
+        };
         if (data.provider) {
           this._healthProvider = data.provider;
-          const LABELS = {
-            claude: 'Claude', gemini: 'Gemini', openai: 'OpenAI', xai: 'xAI',
-            groq: 'Groq', together: 'Together AI', fireworks: 'Fireworks AI',
-            mistral: 'Mistral', perplexity: 'Perplexity', deepseek: 'DeepSeek',
-          };
           const envOpt = document.getElementById('providerEnvOpt');
           if (envOpt) envOpt.textContent = (LABELS[data.provider] || data.provider) + ' (.env)';
         }
+        if (Array.isArray(data.available_providers) && data.available_providers.length) {
+          const sel = document.getElementById('providerSelect');
+          if (sel) {
+            const existing = new Set([...sel.options].map(o => o.value));
+            const envOpt = document.getElementById('providerEnvOpt');
+            for (const pid of data.available_providers) {
+              if (!existing.has(pid)) {
+                const opt = document.createElement('option');
+                opt.value = pid;
+                opt.textContent = (LABELS[pid] || pid) + ' (.env)';
+                if (envOpt) sel.insertBefore(opt, envOpt);
+                else sel.appendChild(opt);
+                existing.add(pid);
+              }
+            }
+            // Re-apply saved provider now that .env options are present
+            const saved = this.loadPref('provider', 'gemini');
+            const match = [...sel.options].find(o => o.value === saved);
+            if (match && sel.value !== saved) {
+              sel.value = saved;
+              this.prefs.provider = saved;
+              this.updateModelOptions();
+            }
+          }
+        }
+        this._revealProviderSelects();
         return true;
       }
     } catch { /* offline */ }
     if (dot) dot.className = 'ae-backend-dot offline';
     if (label) label.textContent = 'Backend offline — run: cd rust-api && cargo run';
+    // If saved provider isn't available locally, fall back to env placeholder
+    // to avoid flashing a wrong provider before .env options are known.
+    const offlineSel = document.getElementById('providerSelect');
+    if (offlineSel) {
+      const savedProv = this.loadPref('provider', 'gemini');
+      const hasMatch = [...offlineSel.options].some(o => o.value === savedProv);
+      if (!hasMatch) {
+        offlineSel.value = 'env';
+        this.prefs.provider = 'env';
+        this.updateModelOptions();
+      }
+    }
+    this._revealProviderSelects();
     return false;
   }
 

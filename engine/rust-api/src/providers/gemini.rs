@@ -21,7 +21,7 @@ impl GeminiProvider {
         Self {
             api_key,
             http_client: reqwest::Client::new(),
-            text_model: "gemini-2.0-flash".to_string(),
+            text_model: "gemini-1.5-flash".to_string(),
             image_model: "imagen-3.0-generate-002".to_string(),
         }
     }
@@ -36,7 +36,8 @@ impl GeminiProvider {
         let status = resp.status();
         let body: Value = resp.json().await.unwrap_or_else(|_| json!({}));
         if !status.is_success() {
-            anyhow::bail!("Gemini API error ({}): {}", status, body);
+            let public_url = url.split('?').next().unwrap_or(url);
+            anyhow::bail!("Gemini API error ({}) {}: {}", status, public_url, body);
         }
         Ok(body)
     }

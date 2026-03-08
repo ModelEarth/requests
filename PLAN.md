@@ -1,22 +1,22 @@
-# "Arts Engine" with Rust API
+# "Arts Engine" with Rust Endpoints
 
-The "[engine](engine)" subfolder contains a high-performance text, image, and video generation tool build with **Claude Code** and **OpenAI Codex** for interaction with their APIs, **X.ai Grok**, **Gemini** and additional [API providers](engine/rust-api/src/providers/) via a standalone Rust backend. The application serves a JamStack static frontend from the `requests/engine` subfolder.
+The "[engine](engine)" subfolder contains a high-performance text, image, and video generation tool build with **Claude Code** and **OpenAI Codex** for interaction with their APIs, **X.ai Grok**, **Gemini** and additional [API providers](engine/rust-api/src/providers/) via a standalone Rust backend and JamStack static frontend.
 
 ---
 
-## AI Agent - Arts Engine Experiments
+## Optional Process for New Iteration Development
 
-[your-agent-name]-beta is the current CLI name plus -beta: claude-beta, openai-beta, gemini-beta, etc
+[your-cli-name] is the CLI command used to invoke the AI assistant (LLM). Examples: claude, codex, gemini, etc.
 
-1. **Copy this plan file** to your own beta folder — `requests/[your-agent-name]-beta/PLAN.md` — and work from that copy going forward. Record your start data and time, end data and time, and total time in the copy.
+1. **Copy this plan file** to your own beta folder — `requests/[your-cli-name]-beta/PLAN.md` — and work from that copy going forward. Record your start data and time, end data and time, and total time in the copy.
 
 2. **Copy engine folder** — copy all files from `requests/engine/` into your beta folder as your starting point.
    ```
-   cp -r requests/engine/* requests/[your-agent-name]-beta/
+   cp -r requests/engine/* requests/[your-cli-name]-beta/
    ```
    The template provides: `index.html`, `css/app.css`, `js/app.js`, `config.yaml`
 
-3. **Do not place Rust files at the `requests/` root.** Your Rust backend lives entirely inside your subfolder at `[your-agent-name]-beta/rust-api/`.
+3. **Do not place Rust files at the `requests/` root.** Your Rust backend lives entirely inside your subfolder at `[your-cli-name]-beta/rust-api/`.
 
 4. **Update your PLAN.md copy** as you build — fill in checkboxes, add endpoint details, record findings. When prompted to resume, re-read your copy first.
 

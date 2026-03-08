@@ -5,6 +5,7 @@ use serde_json::Value;
 pub struct HealthResponse {
     pub ok: bool,
     pub provider: String,
+    pub available_providers: Vec<String>,
     pub message: String,
 }
 
