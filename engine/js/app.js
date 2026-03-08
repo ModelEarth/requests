@@ -265,8 +265,29 @@ class ArtsEngine {
     }
   }
 
+  async loadSampleCSV(event) {
+    event.preventDefault();
+    const url = 'prompts.csv';
+    const nameEl = document.getElementById('csvFileName');
+    if (nameEl) nameEl.textContent = 'prompts.csv';
+    this.setStatus('info', 'Loading prompts.csv…');
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      const parsed = this.parseCSVClientSide(text);
+      this.scenes = parsed;
+      this.renderPromptList();
+      this.renderStoryboard();
+      this.selectScene(0);
+      this.setStatus('success', `Loaded ${parsed.length} prompt${parsed.length !== 1 ? 's' : ''} from prompts.csv`);
+    } catch (err) {
+      this.setStatus('error', 'Failed to load prompts.csv: ' + err.message);
+    }
+  }
+
   async loadDefaultCSV() {
-    const url = 'https://raw.githubusercontent.com/ModelEarth/data-pipeline/refs/heads/main/nodes.csv';
+    const url = 'prompts.csv';
     try {
       const resp = await fetch(url);
       if (!resp.ok) return;
@@ -275,12 +296,33 @@ class ArtsEngine {
       if (!parsed.length) return;
       this.scenes = parsed;
       const nameEl = document.getElementById('csvFileName');
-      if (nameEl) nameEl.textContent = 'nodes.csv';
+      if (nameEl) nameEl.textContent = 'prompts.csv';
       this.renderPromptList();
       this.renderStoryboard();
       this.selectScene(0);
     } catch (err) {
       // silently skip if fetch fails
+    }
+  }
+
+  async loadNodesCSV(event) {
+    event.preventDefault();
+    const url = 'https://raw.githubusercontent.com/ModelEarth/data-pipeline/refs/heads/main/nodes.csv';
+    const nameEl = document.getElementById('csvFileName');
+    if (nameEl) nameEl.textContent = 'nodes.csv';
+    this.setStatus('info', 'Loading nodes.csv…');
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      const parsed = this.parseCSVClientSide(text);
+      this.scenes = parsed;
+      this.renderPromptList();
+      this.renderStoryboard();
+      this.selectScene(0);
+      this.setStatus('success', `Loaded ${parsed.length} prompt${parsed.length !== 1 ? 's' : ''} from nodes.csv`);
+    } catch (err) {
+      this.setStatus('error', 'Failed to load nodes.csv: ' + err.message);
     }
   }
 
@@ -382,7 +424,7 @@ class ArtsEngine {
       nameEl.textContent = scene.node_id ? `${displayName} (${scene.node_id})` : displayName;
     }
     const adjustLink = document.getElementById('adjustPromptLink');
-    if (adjustLink) adjustLink.style.display = '';
+    if (adjustLink) adjustLink.style.display = 'inline';
     this.renderSceneColumnList(scene);
 
     // Apply scene's aspect_ratio if specified
@@ -432,6 +474,10 @@ class ArtsEngine {
     if (adjustLink) { adjustLink.style.display = 'none'; adjustLink.textContent = 'Adjust Prompt'; }
     const usage = document.getElementById('sceneColumnUsage');
     if (usage) usage.style.display = 'none';
+    const preview = document.getElementById('scenePromptPreview');
+    if (preview) preview.style.display = 'none';
+    const previewText = document.getElementById('scenePromptPreviewText');
+    if (previewText) previewText.style.display = 'none';
     this.renderPromptList();
     this.renderStoryboard();
     const ta = document.getElementById('promptInput');
@@ -468,7 +514,7 @@ class ArtsEngine {
       </label>`;
     };
 
-    const grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px';
+    const grid = 'display:flex;flex-direction:column;gap:4px';
     list.innerHTML = `
       <div style="${grid}">${universals.map(([k, v]) => colRow(k, v, true)).join('')}</div>
       ${others.length ? `
@@ -513,13 +559,19 @@ class ArtsEngine {
     const checked = document.getElementById('selectedSceneCheck')?.checked;
     const idx     = (this.selectedSceneIdx ?? 1) - 1;
     const scene   = this.scenes[idx];
-    if (!scene || !checked) { preview.style.display = 'none'; return; }
-    const combined   = this.buildCombinedPrompt('', scene);
+    if (!scene || !checked) {
+      preview.style.display = 'none';
+      previewText.style.display = 'none';
+      return;
+    }
+    const combined = this.buildCombinedPrompt('', scene);
     if (combined) {
-      preview.style.display = '';
+      preview.style.display = 'block';
+      previewText.style.display = 'block';
       previewText.textContent = combined;
     } else {
       preview.style.display = 'none';
+      previewText.style.display = 'none';
     }
   }
 
@@ -594,7 +646,8 @@ class ArtsEngine {
             <div class="ae-node-prompt">${this.escapeHtml(scene.prompt)}</div>
             ${scene.style ? `<div class="ae-node-label">${this.escapeHtml(scene.style)}</div>` : ''}
           </div>
-        </div>${arrow}`;
+          ${arrow}
+        </div>`;
     }).join('');
 
     container.innerHTML = `

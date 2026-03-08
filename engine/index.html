@@ -161,24 +161,30 @@ param.showsearch = "false";
             <span class="material-icons">auto_awesome</span>
             <span id="generateBtnLabel">Generate</span>
           </button>
-          <label id="selectedSceneLabel" style="display:none;align-items:center;font-size:0.85rem;color:#888;cursor:pointer">
-            <input type="checkbox" id="selectedSceneCheck" checked style="cursor:pointer;margin-right:4px"><span>Scene: <span id="selectedSceneName"></span></span>
-          </label>
-          <a id="adjustPromptLink" href="#" style="display:none;font-size:0.8rem;color:#4a90e2;text-decoration:none" onclick="artsEngine.toggleSceneUsage(event)">Adjust Prompt</a>
+        </div>
+
+        <div id="scenePromptPreview" style="display:none;margin:0 0 6px;font-size:0.82rem">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <strong style="font-size:0.95rem">Appended to prompt:</strong>
+            <label id="selectedSceneLabel" style="display:none;align-items:center;font-size:0.85rem;color:#888;cursor:pointer">
+              <input type="checkbox" id="selectedSceneCheck" checked style="cursor:pointer;margin-right:4px"><span>Scene: <span id="selectedSceneName"></span></span>
+            </label>
+            <a id="adjustPromptLink" href="#" style="display:none;font-size:0.8rem;color:#4a90e2;text-decoration:none" onclick="artsEngine.toggleSceneUsage(event)">Adjust Prompt</a>
+          </div>
         </div>
 
         <!-- Scene column usage — revealed by "Adjust Prompt" link -->
         <div id="sceneColumnUsage" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid rgba(74,144,226,0.25);border-radius:8px;background:rgba(74,144,226,0.04);font-size:0.82rem">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
             <label style="display:flex;align-items:center;gap:4px;color:#888">Mode:
-              <select id="sceneMode" onchange="artsEngine.updatePromptPreview()" style="font-size:0.8rem;padding:2px 20px 2px 5px;border-radius:4px;border:1px solid #ccc">
+              <select id="sceneMode" onchange="artsEngine.updatePromptPreview()" class="ls-select">
                 <option value="append">Append to prompt</option>
                 <option value="template">Template — use {column} in prompt</option>
                 <option value="replace">Replace prompt</option>
               </select>
             </label>
             <label style="display:flex;align-items:center;gap:4px;color:#888">Format:
-              <select id="sceneFormat" onchange="artsEngine.updatePromptPreview()" style="font-size:0.8rem;padding:2px 20px 2px 5px;border-radius:4px;border:1px solid #ccc">
+              <select id="sceneFormat" onchange="artsEngine.updatePromptPreview()" class="ls-select">
                 <option value="keyval">Key: value</option>
                 <option value="bullets">Bullet list</option>
                 <option value="json">JSON</option>
@@ -194,10 +200,7 @@ param.showsearch = "false";
           <div id="sceneColumnList"></div>
         </div>
 
-        <div id="scenePromptPreview" style="display:none;margin:0 0 10px;font-size:0.82rem">
-          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">Appended to prompt:</div>
-          <pre id="scenePromptPreviewText" style="margin:0;padding:8px;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.08);border-radius:4px;font-size:0.78rem;white-space:pre-wrap;word-break:break-word;max-height:120px;overflow-y:auto;color:#444"></pre>
-        </div>
+        <pre id="scenePromptPreviewText"></pre>
 
       </div>
 
@@ -277,7 +280,7 @@ param.showsearch = "false";
           Storyboard Flow
         </h3>
         <p style="margin:0 0 12px 0;font-size:0.85rem;color:#888">
-          Load a new CSV, or click a scene row below from our <a href="../../data-pipeline/admin">data-pipeline flow</a>.
+          <a href="#" onclick="event.preventDefault();document.getElementById('csvFileInput').click()">Load a storyboard</a>, <a href="#" onclick="artsEngine.loadSampleCSV(event)">sample scenes (prompts.csv)</a>, or our <a href="#" onclick="artsEngine.loadNodesCSV(event)">data-pipeline flow</a> (<a href="../../data-pipeline/admin" target="data-pipeline-admin">admin</a>).
         </p>
         <div id="storyboardContainer"></div>
 
@@ -384,21 +387,6 @@ param.showsearch = "false";
         </div>
       </div>
 
-      <!-- Sample CSV & Reference Links -->
-      <div class="ae-panel">
-        <h3>
-          <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">table_chart</span>
-          Sample Prompts
-        </h3>
-        <p style="margin:0 0 10px 0;font-size:0.83rem;color:#888">
-          CSV needs a <strong>Prompt</strong> column. Optional:
-          <code>Industry</code>, <code>aspect_ratio</code>, <code>style</code>, <code>scene</code>, <code>Naics</code>
-        </p>
-        <a href="prompts.csv" download class="ae-csv-btn" style="display:inline-flex;text-decoration:none">
-          <span class="material-icons" style="font-size:1rem">download</span>
-          Download sample CSV
-        </a>
-      </div>
 
       <!-- API Reference -->
       <div class="ae-panel" style="font-size:0.83rem">
@@ -422,7 +410,10 @@ param.showsearch = "false";
   <script type="text/javascript" src="../../localsite/js/embed.js?map=airports&showindex=1&showheader=true"></script>
   <div id="listwidget"></div>
 
-  <p style="margin:20px 0;text-align:center"><a href="../">About our Engine</a></p>
+  <p style="margin:20px 0;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px">
+    <button id="authInfoIcon" class="icon-circle-btn" type="button" aria-label="About Our Engine" onclick="window.location.href='../'">i</button>
+    <a href="../">About Our Engine</a>
+  </p>
 </div><!-- /content -->
 
 <!-- Lightbox overlay (full-screen image view, Escape or click outside to close) -->
