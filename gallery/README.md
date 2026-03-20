@@ -6,10 +6,9 @@
 
 [Active Projects](/projects/) 
 
-# Gallery View (JQuery)
+# Gallery View
 
-[Storyboards from prompts in CSV file](/requests)
-- [Active Reader View](../)
+- [Active Reader Objectives](../)
 - [Feed Player (React)](/feed/)
 <!--- [Gallery from GitHub (React)](/react-gallery/view/) -->
 
