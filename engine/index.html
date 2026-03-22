@@ -19,6 +19,9 @@ param.showsearch = "false";
 <script type="text/javascript" src="/localsite/js/localsite.js?showheader=true"></script>
 <script type="text/javascript" src="/projects/js/issues.js"></script>
 
+<!-- Shared GitHub / Resource-Area components (Web Components bundle) -->
+<script defer src="/packages/github-components/dist/github-components.js"></script>
+
 <!--
   Config loader — reads template/config.yaml (or local config.yaml override).
   Populates #ae-title, #ae-subtitle, and window.AE_API_BASE before app.js runs.
@@ -387,6 +390,28 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
 
 
+      <!-- Resource Area Selector — powered by @shared/github-components -->
+      <div class="ae-panel" id="resourceAreaPanel">
+        <h3>
+          <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">folder_special</span>
+          Resource Areas
+        </h3>
+        <p style="margin:0 0 10px 0;font-size:0.83rem;color:#888">
+          Select GitHub repositories or documentation collections to use as context.
+        </p>
+
+        <!-- Filter dropdown — shown once repos are loaded -->
+        <div id="resourceSelectorMount" style="margin-bottom:10px"></div>
+
+        <button id="openRepoModalBtn"
+          style="width:100%;padding:8px 12px;background:#4a90e2;color:#fff;border:none;
+                 border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;
+                 display:flex;align-items:center;justify-content:center;gap:6px">
+          <span class="material-icons" style="font-size:1rem">add_circle_outline</span>
+          Choose Resource Areas
+        </button>
+      </div>
+
       <!-- API Reference -->
       <div class="ae-panel" style="font-size:0.83rem">
         <h3>
@@ -426,6 +451,113 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 </div>
 
 <script type="text/javascript" src="js/app.js"></script>
+
+<!-- GitHub Repo Modal (Web Component) — opened by "Choose Resource Areas" button -->
+<github-repo-modal id="repoModal"></github-repo-modal>
+
+<script>
+// ── Resource Area integration ─────────────────────────────────────────────
+// Waits for the Web Components bundle to register the custom elements before
+// wiring up the modal and the filter dropdown.  Falls back silently if the
+// bundle is not yet loaded (e.g., when served without the packages/ dir).
+(function initResourceAreas() {
+  var STORAGE_KEY = 'ae_github_pat';
+  var REPOS_KEY   = 'ae_selected_repos';
+
+  function getStoredPAT() {
+    // Reuse the GitHub PAT that issues.js / agents.js may have stored, or
+    // fall back to our own storage key.
+    try {
+      var aProRaw = localStorage.getItem('aPro');
+      if (aProRaw) {
+        var aPro = JSON.parse(aProRaw);
+        if (aPro.GitHub) return aPro.GitHub;
+      }
+    } catch (_) {}
+    return localStorage.getItem(STORAGE_KEY) || '';
+  }
+
+  function getStoredRepos() {
+    try { return JSON.parse(localStorage.getItem(REPOS_KEY) || '[]'); } catch (_) { return []; }
+  }
+
+  function saveRepos(repos) {
+    localStorage.setItem(REPOS_KEY, JSON.stringify(repos));
+  }
+
+  function mountSelector(availableRepos, selectedRepos) {
+    var mount = document.getElementById('resourceSelectorMount');
+    if (!mount) return;
+
+    // Remove old element if re-mounting
+    var old = mount.querySelector('resource-area-selector');
+    if (old) mount.removeChild(old);
+
+    if (!availableRepos.length) {
+      mount.innerHTML = '<span style="font-size:0.8rem;color:#aaa">No repos selected yet.</span>';
+      return;
+    }
+
+    var el = document.createElement('resource-area-selector');
+    el.availableRepos = availableRepos;
+    el.selectedRepos  = selectedRepos;
+    el.addEventListener('selection-change', function(e) {
+      saveRepos(e.detail);
+      // Expose current selection for app.js to use if needed
+      window.AE_SELECTED_AREAS = e.detail;
+    });
+    mount.innerHTML = '';
+    mount.appendChild(el);
+    window.AE_SELECTED_AREAS = selectedRepos;
+  }
+
+  function initModal() {
+    var modal  = document.getElementById('repoModal');
+    var btn    = document.getElementById('openRepoModalBtn');
+    if (!modal || !btn) return;
+
+    var pat    = getStoredPAT();
+    var repos  = getStoredRepos();
+
+    modal.setAttribute('github-pat', pat);
+    modal.setAttribute('selected-repos', JSON.stringify(repos));
+
+    btn.addEventListener('click', function() {
+      // Refresh PAT in case the user just entered it in the Agents panel
+      modal.setAttribute('github-pat', getStoredPAT());
+      modal.open();
+    });
+
+    modal.addEventListener('repos-change', function(e) {
+      var names = (e.detail || []).map(function(r) { return r.full_name; });
+      saveRepos(names);
+      mountSelector(names, names);
+      window.AE_SELECTED_AREAS = names;
+    });
+
+    modal.addEventListener('modal-close', function() {
+      // Re-read stored repos after modal closes to refresh selector
+      var stored = getStoredRepos();
+      mountSelector(stored, stored);
+    });
+
+    // Initial mount
+    var storedNames = repos.length ? repos : [];
+    mountSelector(storedNames, storedNames);
+  }
+
+  // Custom elements are registered asynchronously (bundle is `defer`-loaded).
+  // Poll with customElements.whenDefined for a clean handoff.
+  if (typeof customElements !== 'undefined' && customElements.whenDefined) {
+    Promise.all([
+      customElements.whenDefined('resource-area-selector'),
+      customElements.whenDefined('github-repo-modal')
+    ]).then(initModal).catch(function(err) {
+      console.warn('[ResourceAreas] Web Components not available:', err);
+    });
+  }
+})();
+</script>
 
 <script>
 function toggleSettingsContainer(event) {
