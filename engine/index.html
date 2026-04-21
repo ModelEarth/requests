@@ -624,20 +624,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   let agentsAssetsPromise = null;
-  function ensureJQuery() {
-    if (window.jQuery) {
-      return Promise.resolve();
-    }
-    return loadScriptOnce('/localsite/js/jquery.min.js', 'engineAgentsJquery');
-  }
-
   function ensureAgentsAssets() {
     if (!agentsAssetsPromise) {
       agentsAssetsPromise = Promise.all([
-        ensureJQuery(),
-        loadStylesheetOnce('agents/agents.css', 'engineAgentsCss'),
-        loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js', 'engineJsYaml'),
-        loadScriptOnce('agents/agents.js', 'engineAgentsJs')
+        loadStylesheetOnce('/chat/key/style.css', 'kmStylesheet'),
+        loadScriptOnce('/chat/key/providers.js', 'kmProviders'),
+        loadScriptOnce('/chat/key/key-manager.js', 'kmScript')
       ]);
     }
     return agentsAssetsPromise;
@@ -674,24 +666,20 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      setAgentsState(true);
       if (isAgentsPopulated()) {
-        if (typeof window.initAgentsEditor === 'function') {
-          window.initAgentsEditor();
-        }
+        setAgentsState(true);
         return;
       }
 
       toggleAgentsEditor.style.display = 'none';
       ensureAgentsAssets()
         .then(function() {
-          if (typeof window.initAgentsEditor === 'function') {
-            window.initAgentsEditor();
-          }
+          KeyManager.migrateFromLegacy();
+          KeyManager.init(agentsContainer);
           setAgentsState(true);
         })
         .catch(function(error) {
-          console.error('Failed to load agents editor assets', error);
+          console.error('Failed to load key manager assets', error);
           setAgentsState(false);
         });
     });
