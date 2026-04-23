@@ -22,6 +22,7 @@ class ArtsEngine {
     this._healthRunning = false;
     this._lastActivity = Date.now();
     this._healthProvider = '';
+    this._healthOfflineSince = 0;
 
     // Preferences (persisted to localStorage with ae_ prefix)
     this.prefs = {
@@ -44,12 +45,14 @@ class ArtsEngine {
       this._healthRunning = true;
       const online = await this.checkBackendStatus();
       if (!online) {
-        // Offline: retry every 1s until back up
-        setTimeout(runCheck, 1000);
+        const delay = this.getOfflineHealthRetryDelay();
+        setTimeout(runCheck, delay);
       } else if (Date.now() - this._lastActivity < 60000) {
+        this._healthOfflineSince = 0;
         // Online and active within last minute: recheck in 10s
         setTimeout(runCheck, 10000);
       } else {
+        this._healthOfflineSince = 0;
         // Online but idle > 1 minute: pause, go grey
         this._healthRunning = false;
         this._pauseHealth();
@@ -78,6 +81,31 @@ class ArtsEngine {
     const label = document.getElementById('backendLabel');
     if (dot) dot.className = 'ae-backend-dot';
     if (label) label.textContent = `Click to ping ${this._healthProvider || 'API'}`;
+  }
+
+  getApiRoot() {
+    return this.apiBase.replace(/\/api$/, '');
+  }
+
+  getBackendPort() {
+    try {
+      return new URL(this.getApiRoot()).port || '8082';
+    } catch (_) {
+      return '8082';
+    }
+  }
+
+  getOfflineHealthRetryDelay() {
+    const now = Date.now();
+    if (!this._healthOfflineSince) this._healthOfflineSince = now;
+
+    const elapsed = now - this._healthOfflineSince;
+    const retrySchedule = [5000, 15000, 30000, 60000];
+
+    for (const targetMs of retrySchedule) {
+      if (elapsed < targetMs) return targetMs - elapsed;
+    }
+    return 5 * 60 * 1000;
   }
 
   setup() {
@@ -959,7 +987,7 @@ class ArtsEngine {
         if (msg.includes('unavailable') || msg.includes('503')) {
           bar.innerHTML = 'X.ai API temporarily unavailable — check <a href="https://status.x.ai/" target="_blank" style="color:inherit;text-decoration:underline">status.x.ai</a>';
         } else if (msg.toLowerCase().includes('fetch') || msg.includes('network') || msg.includes('refused')) {
-          bar.innerHTML = `Backend unreachable at ${this.apiBase.replace('/api', '')} — run: <code>cd rust-api &amp;&amp; cargo run</code>`;
+          bar.innerHTML = `During development, the Arts Engine only runs on local computers. The Runs backend is unreachable on port ${this.getBackendPort()} at ${this.escapeHtml(this.getApiRoot())}. Use <a href="/team/setup/" style="color:inherit;text-decoration:underline">/team/setup</a> for the start command.`;
         } else {
           bar.textContent = 'Error: ' + msg;
         }
@@ -1227,11 +1255,13 @@ class ArtsEngine {
     const dot   = document.getElementById('backendDot');
     const label = document.getElementById('backendLabel');
     try {
-      const resp = await fetch(`${this.apiBase.replace('/api', '')}/api/health`, { signal: AbortSignal.timeout(4000) });
+      const resp = await fetch(`${this.getApiRoot()}/api/health`, { signal: AbortSignal.timeout(4000) });
       if (resp.ok) {
         const data = await resp.json();
         if (dot) dot.className = 'ae-backend-dot online';
-        if (label) label.textContent = data.provider ? `Backend online · ${data.provider} ready` : 'Backend online';
+        if (label) label.textContent = data.provider
+          ? `Backend online on port ${this.getBackendPort()} · ${data.provider} ready`
+          : `Backend online on port ${this.getBackendPort()}`;
         const LABELS = {
           claude: 'Claude', gemini: 'Gemini', openai: 'OpenAI', xai: 'xAI',
           groq: 'Groq', together: 'Together AI', fireworks: 'Fireworks AI',
@@ -1272,7 +1302,7 @@ class ArtsEngine {
       }
     } catch { /* offline */ }
     if (dot) dot.className = 'ae-backend-dot offline';
-    if (label) label.textContent = 'Backend offline — run: cd rust-api && cargo run';
+    if (label) label.textContent = `During development, the Arts Engine only runs on local computers. The Runs backend is offline on port ${this.getBackendPort()}. Arts Engine Rust backend offline on port ${this.getBackendPort()}.`;
     // If saved provider isn't available locally, fall back to env placeholder
     // to avoid flashing a wrong provider before .env options are known.
     const offlineSel = document.getElementById('providerSelect');

@@ -854,19 +854,21 @@
    ========================================================= */
 
 .ae-backend-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
   font-size: 0.8rem;
   color: #888;
   padding: 4px 0;
+  line-height: 1.7;
+  white-space: normal;
 }
 
 .ae-backend-dot {
+  display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #ccc;
+  vertical-align: middle;
 }
 
 .ae-backend-dot.online { background: #28a745; }

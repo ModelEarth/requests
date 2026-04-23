@@ -113,11 +113,10 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
     - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
 
     <div class="ae-backend-status" style="margin-top:8px">
-      <span class="ae-backend-dot checking" id="backendDot"></span>
-      <span id="backendLabel">Checking backend…</span>
-      <span style="color:#bbb;margin:0 6px">·</span>
-      <a href="javascript:void(0)" id="healthLink" style="font-size:0.78rem;color:#aaa"
-         onclick="window.open((window.AE_API_BASE||'http://localhost:8082')+'/api/health')">health check</a>
+      <span style="font-size:0.95rem;color:#888; margin-bottom:10px; display:inline-block;">
+        <strong>Start your local server - </strong><span id="backendLabel">Checking backend on port 8082…</span>
+      </span>
+      <a href="/team/setup/" class="btn btn-secondary" style="font-size:0.95rem;" title="Local Webroot Startup">Local Webroot Startup</a>
     </div>
   </div>
 
@@ -286,7 +285,7 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
               <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
                 <strong>Start Rust backend:</strong><br>
                 <code style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">
-                  cd rust-api &amp;&amp; cargo run
+                  cd requests/engine/rust-api &amp;&amp; cargo run
                 </code>
               </div>
               <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
@@ -627,9 +626,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function ensureAgentsAssets() {
     if (!agentsAssetsPromise) {
       agentsAssetsPromise = Promise.all([
-        loadStylesheetOnce('/chat/key/style.css', 'kmStylesheet'),
-        loadScriptOnce('/chat/key/providers.js', 'kmProviders'),
-        loadScriptOnce('/chat/key/key-manager.js', 'kmScript')
+        loadStylesheetOnce('/chat/keys/style.css', 'kmStylesheet'),
+        loadScriptOnce('/chat/keys/providers.js', 'kmProviders'),
+        loadScriptOnce('/chat/keys/key-manager.js', 'kmScript')
       ]);
     }
     return agentsAssetsPromise;
