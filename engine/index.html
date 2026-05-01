@@ -674,7 +674,9 @@ document.addEventListener('DOMContentLoaded', function () {
       ensureAgentsAssets()
         .then(function() {
           KeyManager.migrateFromLegacy();
-          KeyManager.init(agentsContainer);
+          KeyManager.init(agentsContainer, {
+            serverKeysUrl: 'http://localhost:8888/api/server-keys'
+          });
           setAgentsState(true);
         })
         .catch(function(error) {
