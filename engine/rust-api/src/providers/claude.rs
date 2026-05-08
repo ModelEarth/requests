@@ -54,7 +54,7 @@ impl ClaudeProvider {
 #[async_trait]
 impl GenerativeModel for ClaudeProvider {
     fn provider_name(&self) -> &str {
-        "claude"
+        "anthropic"
     }
 
     async fn list_models(&self) -> anyhow::Result<Vec<ModelSummary>> {
@@ -106,7 +106,7 @@ impl GenerativeModel for ClaudeProvider {
         });
 
         Ok(GenerationResponse {
-            provider: "claude".to_string(),
+            provider: "anthropic".to_string(),
             model: model.to_string(),
             status: "completed".to_string(),
             id: raw["id"].as_str().map(ToString::to_string),

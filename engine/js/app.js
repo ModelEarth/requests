@@ -28,8 +28,8 @@ class ArtsEngine {
     this.prefs = {
       ratio:      this.loadPref('ratio', 'square'),
       outputType: this.loadPref('outputType', 'image'),
-      provider:   this.loadPref('provider', 'gemini'),
-      model:      this.loadPref('model', 'gemini-1.5-flash'),
+      provider:   this.loadPref('provider', 'google'),
+      model:      this.loadPref('model', 'gemini-2.5-flash'),
       variations: parseInt(this.loadPref('variations', '1')),
     };
 
@@ -109,7 +109,7 @@ class ArtsEngine {
   }
 
   setup() {
-    this.initProviderSelector(); // populates selects before restorePrefs reads them
+    this.initModelTrigger();
     this.bindEvents();
     this.restorePrefs();
     this.renderStoryboard();
@@ -145,6 +145,7 @@ class ArtsEngine {
   // -------------------------------------------------------------------------
 
   bindEvents() {
+    document.getElementById('generateBtn')?.addEventListener('mousedown', e => e.preventDefault());
     document.getElementById('generateBtn')?.addEventListener('click', () => this.generate());
 
     // Ctrl+Enter / Cmd+Enter triggers generation from textarea
@@ -224,13 +225,6 @@ class ArtsEngine {
     });
 
     updateOutputTypeUI(this.prefs.outputType);
-
-    // Model selector — save per-provider so each provider remembers its last model
-    document.getElementById('modelSelect')?.addEventListener('change', e => {
-      this.prefs.model = e.target.value;
-      this.savePref('model_' + (this.prefs.provider || 'gemini'), e.target.value);
-      this.syncOutputButtons();
-    });
 
     // Variations input (clamp 1–4)
     document.getElementById('variationsInput')?.addEventListener('input', e => {
@@ -700,144 +694,198 @@ class ArtsEngine {
   }
 
   // -------------------------------------------------------------------------
-  // Provider selector — localStorage aPro keys take priority over docker/.env
+  // Provider / model data — browser keys (settings_api-keys) take priority over backend .env
   // -------------------------------------------------------------------------
 
+  // Derived from window.KeyManagerProviders (chat/keys/providers.js — canonical source).
+  // text output is assumed for all models; only 'image'/'video' appear in providers.js outputs field.
   static get PROVIDER_MODELS() {
-    return {
-      claude: [
-        { value: 'claude-opus-4-6',           label: 'Claude Opus 4.6', outputs: ['text'] },
-        { value: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6', outputs: ['text'] },
-        { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', outputs: ['text'] },
-      ],
-      gemini: [
-        { value: 'gemini-1.5-flash',              label: 'Gemini 1.5 Flash', outputs: ['text'] },
-        { value: 'gemini-1.5-pro',                label: 'Gemini 1.5 Pro', outputs: ['text'] },
-        { value: 'gemini-2.0-flash',              label: 'Gemini 2.0 Flash', outputs: ['text', 'image'] },
-        { value: 'gemini-2.0-flash-thinking-exp', label: 'Gemini 2.0 Flash Thinking', outputs: ['text'] },
-      ],
-      openai: [
-        { value: 'gpt-4o',      label: 'GPT-4o', outputs: ['text', 'image'] },
-        { value: 'gpt-4o-mini', label: 'GPT-4o mini', outputs: ['text'] },
-        { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', outputs: ['text'] },
-      ],
-      xai: [
-        { value: 'grok-3-mini-beta', label: 'Grok 3 Mini', outputs: ['text'] },
-        { value: 'grok-3',           label: 'Grok 3', outputs: ['text'] },
-        { value: 'grok-2-1212',      label: 'Grok 2', outputs: ['text'] },
-      ],
-      groq: [
-        { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', outputs: ['text'] },
-        { value: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B', outputs: ['text'] },
-        { value: 'mixtral-8x7b-32768',      label: 'Mixtral 8x7B', outputs: ['text'] },
-      ],
-      together: [
-        { value: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',     label: 'Llama 3.3 70B Turbo', outputs: ['text'] },
-        { value: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', label: 'Llama 3.1 8B Turbo', outputs: ['text'] },
-      ],
-      fireworks: [
-        { value: 'accounts/fireworks/models/llama-v3p3-70b-instruct', label: 'Llama 3.3 70B', outputs: ['text'] },
-        { value: 'accounts/fireworks/models/qwen2p5-72b-instruct',    label: 'Qwen 2.5 72B', outputs: ['text'] },
-      ],
-      mistral: [
-        { value: 'mistral-large-latest', label: 'Mistral Large', outputs: ['text'] },
-        { value: 'mistral-small-latest', label: 'Mistral Small', outputs: ['text'] },
-        { value: 'codestral-latest',     label: 'Codestral', outputs: ['text'] },
-      ],
-      perplexity: [
-        { value: 'llama-3.1-sonar-large-128k-online', label: 'Sonar Large (online)', outputs: ['text'] },
-        { value: 'llama-3.1-sonar-small-128k-online', label: 'Sonar Small (online)', outputs: ['text'] },
-      ],
-      deepseek: [
-        { value: 'deepseek-chat',     label: 'DeepSeek Chat', outputs: ['text'] },
-        { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner', outputs: ['text'] },
-      ],
-      env: [
-        { value: 'grok-3-mini-beta', label: 'Grok 3 Mini (default)', outputs: ['text'] },
-        { value: 'grok-3',           label: 'Grok 3', outputs: ['text'] },
-      ],
-    };
+    const reg = window.KeyManagerProviders;
+    if (!reg) return { env: [{ value: 'grok-3', label: 'Grok 3 (default)', outputs: ['text', 'image', 'video'] }] };
+    const result = {};
+    for (const p of reg) {
+      if (!p.models?.length || p.tokenOnly || p.cliOnly) continue;
+      const active = p.models.filter(m => m.active !== false);
+      if (!active.length) continue;
+      result[p.id] = active.map(m => ({
+        value: m.id,
+        label: m.name,
+        outputs: ['text', ...(m.outputs || [])],
+      }));
+    }
+    // 'env' = backend .env provider; mirror xai models as default
+    result.env = (result.xai || []).map(m => ({ ...m, label: m.label + ' (default)' }));
+    if (!result.env.length) result.env = [{ value: 'grok-3', label: 'Grok 3 (default)', outputs: ['text', 'image', 'video'] }];
+    return result;
   }
 
-  initProviderSelector() {
-    const KEY_MAP = {
-      'ANTHROPIC_API_KEY':   { id: 'claude',     label: 'Claude' },
-      'CLAUDE_API_KEY':      { id: 'claude',     label: 'Claude' },
-      'GEMINI_API_KEY':      { id: 'gemini',     label: 'Gemini' },
-      'OPENAI_API_KEY':      { id: 'openai',     label: 'OpenAI' },
-      'XAI_API_KEY':         { id: 'xai',        label: 'xAI' },
-      'GROQ_API_KEY':        { id: 'groq',       label: 'Groq' },
-      'TOGETHER_API_KEY':    { id: 'together',   label: 'Together AI' },
-      'FIREWORKS_API_KEY':   { id: 'fireworks',  label: 'Fireworks AI' },
-      'MISTRAL_API_KEY':     { id: 'mistral',    label: 'Mistral' },
-      'PERPLEXITY_API_KEY':  { id: 'perplexity', label: 'Perplexity' },
-      'DEEPSEEK_API_KEY':    { id: 'deepseek',   label: 'DeepSeek' },
-    };
+  static get PROVIDER_LABELS() {
+    const reg = window.KeyManagerProviders;
+    const base = reg ? Object.fromEntries(reg.map(p => [p.id, p.name])) : {};
+    return { ...base, env: 'Backend (.env)' };
+  }
 
-    let aPro = {};
-    try { aPro = JSON.parse(localStorage.getItem('aPro') || '{}'); } catch (_) {}
+  // -------------------------------------------------------------------------
+  // Model trigger — .sp-model-trigger / .sp-model-menu (same pattern as chat/prompt)
+  // -------------------------------------------------------------------------
 
-    const sel = document.getElementById('providerSelect');
-    if (!sel) return;
+  initModelTrigger() {
+    this._modelMenuOpen = false;
+    this._configuredProviders = this._readConfiguredProviders();
 
-    sel.innerHTML = '';
-    for (const [keyName, { id, label }] of Object.entries(KEY_MAP)) {
-      if (aPro[keyName]) {
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = label;
-        sel.appendChild(opt);
-      }
-    }
-    // Backend (.env) fallback — label updated to actual provider once health check resolves
-    const envOpt = document.createElement('option');
-    envOpt.id    = 'providerEnvOpt';
-    envOpt.value = 'env';
-    envOpt.textContent = 'Backend (.env)';
-    sel.appendChild(envOpt);
-
-    // Restore saved provider; default to gemini if available
+    // Restore or pick a valid saved provider
     const saved = this.prefs.provider;
-    const match = [...sel.options].find(o => o.value === saved);
-    sel.value = match ? saved : sel.options[0].value;
-    this.prefs.provider = sel.value;
+    const allIds = Object.keys(ArtsEngine.PROVIDER_MODELS);
+    if (!allIds.includes(saved)) {
+      this.prefs.provider = this._configuredProviders.size
+        ? [...this._configuredProviders][0]
+        : 'env';
+      this.savePref('provider', this.prefs.provider);
+    }
+    this._syncModelPref();
+    this.renderModelTrigger();
+    this.renderModelMenu();
 
-    sel.addEventListener('change', () => {
-      this.prefs.provider = sel.value;
-      this.savePref('provider', sel.value);
-      this.updateModelOptions();
+    const trigger = document.getElementById('modelTrigger');
+    const menu    = document.getElementById('modelMenu');
+    if (!trigger || !menu) return;
+
+    trigger.addEventListener('click', e => {
+      e.stopPropagation();
+      const hasBrowserKeys = this._configuredProviders.size > 0;
+      const hasEnvKeys     = !!(this._envAvailableProviders?.size || this._healthProvider);
+      if (!hasBrowserKeys && !hasEnvKeys) {
+        document.getElementById('toggleAgentsEditor')?.click();
+        return;
+      }
+      this._modelMenuOpen = !this._modelMenuOpen;
+      this.renderModelMenu();
+    });
+    document.addEventListener('click', e => {
+      if (this._modelMenuOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
+        this._modelMenuOpen = false;
+        this.renderModelMenu();
+      }
     });
 
-    this.updateModelOptions();
-
-    // Reveal selects now only if the saved provider was already available
-    // (no .env lookup needed). Otherwise wait for checkBackendStatus to reveal.
-    if (match) this._revealProviderSelects();
+    // Re-render when keys are saved via the key manager
+    window.addEventListener('storage', e => {
+      if (e.key === 'settings_api-keys') {
+        this._configuredProviders = this._readConfiguredProviders();
+        if (this._configuredProviders.size > 0 && this.prefs.provider === 'env') {
+          this.prefs.provider = [...this._configuredProviders][0];
+          this.savePref('provider', this.prefs.provider);
+          this._syncModelPref();
+        }
+        this.renderModelTrigger();
+      }
+    });
   }
 
-  _revealProviderSelects() {
-    document.getElementById('providerSelect')?.style && (document.getElementById('providerSelect').style.opacity = '');
-    document.getElementById('modelSelect')?.style && (document.getElementById('modelSelect').style.opacity = '');
+  _readConfiguredProviders() {
+    const configured = new Set();
+    try {
+      const raw = JSON.parse(localStorage.getItem('settings_api-keys') || '{}');
+      for (const id of Object.keys(ArtsEngine.PROVIDER_MODELS)) {
+        if (id !== 'env' && raw[id]) configured.add(id);
+      }
+    } catch (_) {}
+    return configured;
   }
 
-  updateModelOptions() {
-    const providerId = this.prefs.provider || 'gemini';
-    const models = ArtsEngine.PROVIDER_MODELS[providerId] || ArtsEngine.PROVIDER_MODELS.env;
-    const modelSel = document.getElementById('modelSelect');
-    if (!modelSel) return;
-
-    modelSel.innerHTML = models.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
-
-    const saved = this.loadPref('model_' + providerId, models[0].value);
-    modelSel.value = [...modelSel.options].find(o => o.value === saved) ? saved : models[0].value;
-    this.prefs.model = modelSel.value;
-
+  _syncModelPref() {
+    const models = ArtsEngine.PROVIDER_MODELS[this.prefs.provider] || ArtsEngine.PROVIDER_MODELS.env;
+    const saved  = this.loadPref('model_' + this.prefs.provider, models[0].value);
+    this.prefs.model = models.find(m => m.value === saved) ? saved : models[0].value;
     this.syncOutputButtons();
   }
 
+  renderModelTrigger() {
+    const trigger = document.getElementById('modelTrigger');
+    if (!trigger) return;
+    const hasBrowserKeys = (this._configuredProviders || new Set()).size > 0;
+    const hasEnvKeys     = !!(this._envAvailableProviders?.size || this._healthProvider);
+    if (!hasBrowserKeys && !hasEnvKeys) {
+      trigger.innerHTML =
+        `<span class="sp-model-copy">` +
+        `<span class="sp-model-name">Add Model Key</span>` +
+        `<span class="sp-model-provider">No keys configured</span>` +
+        `</span>` +
+        `<svg height="16" viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+      return;
+    }
+    const models   = ArtsEngine.PROVIDER_MODELS[this.prefs.provider] || ArtsEngine.PROVIDER_MODELS.env;
+    const model    = models.find(m => m.value === this.prefs.model) || models[0];
+    const provName = this._envProviderLabel && this.prefs.provider === 'env'
+      ? this._envProviderLabel
+      : (ArtsEngine.PROVIDER_LABELS[this.prefs.provider] || this.prefs.provider);
+    trigger.innerHTML =
+      `<span class="sp-model-copy">` +
+      `<span class="sp-model-name">${model ? this.escapeHtml(model.label) : 'Select model'}</span>` +
+      `<span class="sp-model-provider">${this.escapeHtml(provName)}</span>` +
+      `</span>` +
+      `<svg height="16" viewBox="0 0 16 16" width="16"><path d="M12.0607 6.74999L8.7071 10.1035C8.31657 10.4941 7.68341 10.4941 7.29288 10.1035L3.93933 6.74999L4.99999 5.68933L7.99999 8.68933L11 5.68933L12.0607 6.74999Z" fill="currentColor"/></svg>`;
+  }
+
+  renderModelMenu() {
+    const menu = document.getElementById('modelMenu');
+    if (!menu) return;
+    menu.hidden = !this._modelMenuOpen;
+    if (!this._modelMenuOpen) return;
+
+    const allModels = ArtsEngine.PROVIDER_MODELS;
+    const configured = this._configuredProviders || new Set();
+
+    const groupsHtml = Object.entries(allModels).map(([id, models]) => {
+      const hasKey   = id === 'env' || configured.has(id);
+      const label    = id === 'env'
+        ? (this._envProviderLabel || ArtsEngine.PROVIDER_LABELS.env)
+        : (ArtsEngine.PROVIDER_LABELS[id] || id);
+      const lockIcon = hasKey
+        ? `<svg height="13" viewBox="0 0 16 16" width="13"><path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM11.5303 6.53033L12.0607 6L11 4.93934L10.4697 5.46967L6.5 9.43934L5.53033 8.46967L5 7.93934L3.93934 9L4.46967 9.53033L5.96967 11.0303C6.26256 11.3232 6.73744 11.3232 7.03033 11.0303L11.5303 6.53033Z" fill="currentColor"/></svg>`
+        : `<svg height="13" viewBox="0 0 24 24" width="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+
+      const rows = models.map(m => {
+        const sel = m.value === this.prefs.model && id === this.prefs.provider;
+        const check = sel && hasKey
+          ? `<svg height="14" viewBox="0 0 16 16" width="14"><path d="M16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8ZM11.5303 6.53033L12.0607 6L11 4.93934L10.4697 5.46967L6.5 9.43934L5.53033 8.46967L5 7.93934L3.93934 9L4.46967 9.53033L5.96967 11.0303C6.26256 11.3232 6.73744 11.3232 7.03033 11.0303L11.5303 6.53033Z" fill="currentColor"/></svg>`
+          : '';
+        const meta = hasKey ? '' : 'Add key via My Model Keys';
+        return `<button class="sp-model-option${hasKey ? '' : ' is-disabled'}" ` +
+          `data-ae-provider="${this.escapeHtml(id)}" data-ae-model="${this.escapeHtml(m.value)}" type="button">` +
+          `<div class="sp-model-option-row">` +
+          `<div><div class="sp-model-option-title">${this.escapeHtml(m.label)}</div>` +
+          `<div class="sp-model-option-meta">${meta}</div></div>` +
+          `<div>${check}</div>` +
+          `</div></button>`;
+      }).join('');
+
+      return `<div class="sp-model-provider-group">` +
+        `<div class="sp-model-provider-header">${lockIcon}<span>${this.escapeHtml(label)}</span></div>` +
+        rows + `</div>`;
+    }).join('');
+
+    menu.innerHTML = groupsHtml;
+
+    menu.querySelectorAll('[data-ae-provider]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.getAttribute('data-ae-provider');
+        const mid = btn.getAttribute('data-ae-model');
+        if (!this._configuredProviders.has(pid) && pid !== 'env') return;
+        this.prefs.provider = pid;
+        this.prefs.model    = mid;
+        this.savePref('provider', pid);
+        this.savePref('model_' + pid, mid);
+        this._modelMenuOpen = false;
+        this.renderModelTrigger();
+        this.renderModelMenu();
+        this.syncOutputButtons();
+      });
+    });
+  }
+
   getCurrentModelConfig() {
-    const providerId = this.prefs.provider || 'gemini';
-    const models = ArtsEngine.PROVIDER_MODELS[providerId] || ArtsEngine.PROVIDER_MODELS.env;
+    const models = ArtsEngine.PROVIDER_MODELS[this.prefs.provider] || ArtsEngine.PROVIDER_MODELS.env;
     return models.find(m => m.value === this.prefs.model) || models[0] || null;
   }
 
@@ -891,32 +939,15 @@ class ArtsEngine {
 
 
   getActiveProvider() {
-    const KEY_NAMES = {
-      claude:     'CLAUDE_API_KEY',
-      gemini:     'GEMINI_API_KEY',
-      openai:     'OPENAI_API_KEY',
-      xai:        'XAI_API_KEY',
-      groq:       'GROQ_API_KEY',
-      together:   'TOGETHER_API_KEY',
-      fireworks:  'FIREWORKS_API_KEY',
-      mistral:    'MISTRAL_API_KEY',
-      perplexity: 'PERPLEXITY_API_KEY',
-      deepseek:   'DEEPSEEK_API_KEY',
-    };
-    const providerId = document.getElementById('providerSelect')?.value || this.prefs.provider;
+    const providerId = this.prefs.provider;
     if (!providerId || providerId === 'env') return null; // use backend .env
-    let aPro = {};
-    try { aPro = JSON.parse(localStorage.getItem('aPro') || '{}'); } catch (_) {}
-    const key = aPro[KEY_NAMES[providerId]];
+    const key = window.KeyManager?.get(providerId) || null;
     return key ? { provider: providerId, key } : null;
   }
 
   buildProviderHeaders() {
     const active = this.getActiveProvider();
     if (!active) return {};
-    if (active.provider === 'gemini') {
-      alert('Using GEMINI_API_KEY from local storage (#apiProvider1).');
-    }
     return { 'X-Provider-Name': active.provider, 'X-Provider-Key': active.key };
   }
 
@@ -927,6 +958,11 @@ class ArtsEngine {
   async generate() {
     if (window.AE_API_BASE) this.apiBase = window.AE_API_BASE.replace(/\/$/, '') + '/api';
     if (this.generating) return;
+    this.generating = true;
+    const btn = document.getElementById('generateBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="ae-spinner"></span> Generating…'; }
+    // Ensure plaintext key cache is warm before reading keys (idempotent after first call)
+    if (window.KeyManager?.initCrypto) await window.KeyManager.initCrypto().catch(() => {});
     const singlePrompt = document.getElementById('promptInput')?.value.trim();
     const useScene = document.getElementById('selectedSceneCheck')?.checked && this.scenes.length > 0;
     let promptsToRun;
@@ -943,11 +979,7 @@ class ArtsEngine {
       promptsToRun = [{ scene: '1', prompt: singlePrompt, aspect_ratio: '', style: '', image: null, text: null }];
     }
 
-    if (!promptsToRun) { this.setStatus('error', 'Enter a prompt or load a CSV file first'); return; }
-
-    this.generating = true;
-    const btn = document.getElementById('generateBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="ae-spinner"></span> Generating…'; }
+    if (!promptsToRun) { this.generating = false; if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-icons">auto_awesome</span> <span id="generateBtnLabel">Generate</span>'; } this.setStatus('error', 'Enter a prompt or load a CSV file first'); return; }
 
     try {
       const scene = promptsToRun[0];
@@ -1263,59 +1295,38 @@ class ArtsEngine {
           ? `Backend online on port ${this.getBackendPort()} · ${data.provider} ready`
           : `Backend online on port ${this.getBackendPort()}`;
         const LABELS = {
-          claude: 'Claude', gemini: 'Gemini', openai: 'OpenAI', xai: 'xAI',
-          groq: 'Groq', together: 'Together AI', fireworks: 'Fireworks AI',
-          mistral: 'Mistral', perplexity: 'Perplexity', deepseek: 'DeepSeek',
+          anthropic: 'Anthropic', google: 'Google', openai: 'OpenAI', xai: 'xAI', groq: 'Groq',
         };
         if (data.provider) {
           this._healthProvider = data.provider;
-          const envOpt = document.getElementById('providerEnvOpt');
-          if (envOpt) envOpt.textContent = (LABELS[data.provider] || data.provider) + ' (.env)';
+          this._envProviderLabel = (LABELS[data.provider] || data.provider) + ' (.env)';
         }
-        if (Array.isArray(data.available_providers) && data.available_providers.length) {
-          const sel = document.getElementById('providerSelect');
-          if (sel) {
-            const existing = new Set([...sel.options].map(o => o.value));
-            const envOpt = document.getElementById('providerEnvOpt');
-            for (const pid of data.available_providers) {
-              if (!existing.has(pid)) {
-                const opt = document.createElement('option');
-                opt.value = pid;
-                opt.textContent = (LABELS[pid] || pid) + ' (.env)';
-                if (envOpt) sel.insertBefore(opt, envOpt);
-                else sel.appendChild(opt);
-                existing.add(pid);
-              }
-            }
-            // Re-apply saved provider now that .env options are present
-            const saved = this.loadPref('provider', 'gemini');
-            const match = [...sel.options].find(o => o.value === saved);
-            if (match && sel.value !== saved) {
-              sel.value = saved;
-              this.prefs.provider = saved;
-              this.updateModelOptions();
-            }
+        // Track which providers have .env keys so the trigger can show them
+        this._envAvailableProviders = new Set(
+          Array.isArray(data.available_providers) ? data.available_providers : (data.provider ? [data.provider] : [])
+        );
+        // If no browser keys are set, select the env provider that matches the backend
+        if (this._configuredProviders.size === 0) {
+          if (this.prefs.provider !== 'env') {
+            this.prefs.provider = 'env';
+            this.savePref('provider', 'env');
+            this._syncModelPref();
           }
         }
-        this._revealProviderSelects();
+        this.renderModelTrigger();
         return true;
       }
     } catch { /* offline */ }
     if (dot) dot.className = 'ae-backend-dot offline';
     if (label) label.textContent = `During development, the Arts Engine only runs on local computers. The Runs backend is offline on port ${this.getBackendPort()}. Arts Engine Rust backend offline on port ${this.getBackendPort()}.`;
-    // If saved provider isn't available locally, fall back to env placeholder
-    // to avoid flashing a wrong provider before .env options are known.
-    const offlineSel = document.getElementById('providerSelect');
-    if (offlineSel) {
-      const savedProv = this.loadPref('provider', 'gemini');
-      const hasMatch = [...offlineSel.options].some(o => o.value === savedProv);
-      if (!hasMatch) {
-        offlineSel.value = 'env';
-        this.prefs.provider = 'env';
-        this.updateModelOptions();
-      }
+    // If saved provider has no browser key, fall back to env
+    const savedProv = this.loadPref('provider', 'google');
+    if (!this._configuredProviders.has(savedProv) && savedProv !== 'env') {
+      this.prefs.provider = 'env';
+      this.savePref('provider', 'env');
+      this._syncModelPref();
+      this.renderModelTrigger();
     }
-    this._revealProviderSelects();
     return false;
   }
 

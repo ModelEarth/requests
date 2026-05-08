@@ -46,7 +46,7 @@ impl GeminiProvider {
 #[async_trait]
 impl GenerativeModel for GeminiProvider {
     fn provider_name(&self) -> &str {
-        "gemini"
+        "google"
     }
 
     async fn list_models(&self) -> anyhow::Result<Vec<ModelSummary>> {
@@ -108,7 +108,7 @@ impl GenerativeModel for GeminiProvider {
             .to_string();
 
         Ok(GenerationResponse {
-            provider: "gemini".to_string(),
+            provider: "google".to_string(),
             model: model.to_string(),
             status: "completed".to_string(),
             id: None,
@@ -164,7 +164,7 @@ impl GenerativeModel for GeminiProvider {
         };
 
         Ok(GenerationResponse {
-            provider: "gemini".to_string(),
+            provider: "google".to_string(),
             model: self.image_model.clone(),
             status,
             id: None,

@@ -20,7 +20,7 @@ param.showsearch = "false";
 <script type="text/javascript" src="/projects/js/issues.js"></script>
 
 <!-- Shared GitHub / Resource-Area components (Web Components bundle) -->
-<script defer src="/docker/packages/github-components/dist/github-components.js"></script>
+<script defer src="/chat/packages/github-components/dist/github-components.js"></script>
 
 <!--
   Config loader — reads template/config.yaml (or local config.yaml override).
@@ -116,7 +116,7 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
       <span style="font-size:0.95rem;color:#888; margin-bottom:10px; display:inline-block;">
         <strong>Start your local server - </strong><span id="backendLabel">Checking backend on port 8082…</span>
       </span>
-      <a href="/team/setup/" class="btn btn-secondary" style="font-size:0.95rem;" title="Local Webroot Startup">Local Webroot Startup</a>
+      <a href="/team/setup/" style="font-size:0.95rem;" title="Local Webroot Startup">Local Webroot Startup</a>
     </div>
   </div>
 
@@ -210,6 +210,25 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
       </div>
 
+      <!-- Gallery Panel (revealed after first generation) -->
+      <div class="ae-panel" id="galleryPanel">
+        <h3 style="display:flex;align-items:center;justify-content:space-between">
+          <span>
+            <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">photo_library</span>
+            Generated Output
+          </span>
+          <button id="rawToggleBtn" title="View raw API response"
+            onclick="artsEngine && artsEngine.toggleRaw()"
+            style="background:none;border:none;cursor:pointer;padding:2px 4px;color:#aaa;line-height:1">
+            <span class="material-icons" style="font-size:1.1rem;vertical-align:middle">settings</span>
+          </button>
+        </h3>
+        <div id="gallery" class="ae-gallery"></div>
+        <pre id="rawPanel" style="display:none;margin-top:14px;padding:12px;background:#f6f8fa;
+          border-radius:8px;font-size:0.75rem;overflow:auto;max-height:300px;white-space:pre-wrap;
+          word-break:break-all;color:#333"></pre>
+      </div>
+
       <!-- Aspect Ratio Selector -->
       <div class="ae-panel">
         <h3>Aspect Ratio</h3>
@@ -264,9 +283,11 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
           <div class="ae-model-section">
             <h3 class="ae-model-label">Model</h3>
-            <div id="modelRow" style="display:flex;gap:8px;align-items:center">
-              <select id="providerSelect" class="ae-model-select" title="AI Provider" style="opacity:0"></select>
-              <select id="modelSelect" class="ae-model-select" title="Model" style="opacity:0"></select>
+            <div id="modelRow">
+              <div class="sp-model-wrap">
+                <button class="sp-model-trigger" id="modelTrigger" type="button"></button>
+                <div class="sp-model-menu" id="modelMenu" hidden></div>
+              </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
               <span class="material-icons" id="toggleSettingsBtn" title="Settings"
@@ -337,25 +358,6 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
         <!-- Loaded prompts list (populated by JS) -->
         <div id="promptList"></div>
-      </div>
-
-      <!-- Gallery Panel (revealed after first generation) -->
-      <div class="ae-panel" id="galleryPanel">
-        <h3 style="display:flex;align-items:center;justify-content:space-between">
-          <span>
-            <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">photo_library</span>
-            Generated Output
-          </span>
-          <button id="rawToggleBtn" title="View raw API response"
-            onclick="artsEngine && artsEngine.toggleRaw()"
-            style="background:none;border:none;cursor:pointer;padding:2px 4px;color:#aaa;line-height:1">
-            <span class="material-icons" style="font-size:1.1rem;vertical-align:middle">settings</span>
-          </button>
-        </h3>
-        <div id="gallery" class="ae-gallery"></div>
-        <pre id="rawPanel" style="display:none;margin-top:14px;padding:12px;background:#f6f8fa;
-          border-radius:8px;font-size:0.75rem;overflow:auto;max-height:300px;white-space:pre-wrap;
-          word-break:break-all;color:#333"></pre>
       </div>
 
     </div><!-- /ae-left -->
@@ -453,6 +455,9 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
   <img id="aeLightboxImg" src="" alt="Generated image">
 </div>
 
+<script type="text/javascript" src="/chat/keys/providers.js"></script>
+<script type="text/javascript" src="/chat/keys/key-manager.js"></script>
+<script>if (window.KeyManager) window.KeyManager.initCrypto().catch(function () {});</script>
 <script type="text/javascript" src="js/app.js"></script>
 
 <!-- GitHub Repo Modal (Web Component) — opened by "Choose Resource Areas" button -->
@@ -627,8 +632,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!agentsAssetsPromise) {
       agentsAssetsPromise = Promise.all([
         loadStylesheetOnce('/chat/keys/style.css', 'kmStylesheet'),
-        loadScriptOnce('/chat/keys/providers.js', 'kmProviders'),
-        loadScriptOnce('/chat/keys/key-manager.js', 'kmScript')
       ]);
     }
     return agentsAssetsPromise;
@@ -675,7 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function() {
           KeyManager.migrateFromLegacy();
           KeyManager.init(agentsContainer, {
-            serverKeysUrl: 'http://localhost:8888/api/server-keys'
+            serverKeysUrl: (window.AE_API_BASE || 'http://localhost:8082') + '/api/server-keys'
           });
           setAgentsState(true);
         })

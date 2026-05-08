@@ -26,12 +26,12 @@ pub trait GenerativeModel: Send + Sync {
 pub fn build_provider(config: &AppConfig) -> anyhow::Result<Arc<dyn GenerativeModel>> {
     match config.provider.as_str() {
         "xai" => Ok(Arc::new(xai::XaiProvider::new(config)?)),
-        "gemini" => {
+        "google" => {
             let key = config
                 .gemini_api_key
                 .clone()
                 .filter(|k| !k.is_empty())
-                .ok_or_else(|| anyhow::anyhow!("Missing GEMINI_API_KEY for gemini provider"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing GEMINI_API_KEY for google provider"))?;
             Ok(Arc::new(gemini::GeminiProvider::new(key)))
         }
         "openai" => {
@@ -46,12 +46,12 @@ pub fn build_provider(config: &AppConfig) -> anyhow::Result<Arc<dyn GenerativeMo
                     .with_image_model("dall-e-3"),
             ))
         }
-        "claude" => {
+        "anthropic" => {
             let key = config
                 .claude_api_key
                 .clone()
                 .filter(|k| !k.is_empty())
-                .ok_or_else(|| anyhow::anyhow!("Missing CLAUDE_API_KEY for claude provider"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing CLAUDE_API_KEY for anthropic provider"))?;
             Ok(Arc::new(claude::ClaudeProvider::new(key)))
         }
         other => anyhow::bail!("Unsupported provider: {other}"),
@@ -68,14 +68,14 @@ pub fn build_provider_dynamic(
     base_url: Option<&str>,
 ) -> anyhow::Result<Arc<dyn GenerativeModel>> {
     match name {
-        "gemini" => Ok(Arc::new(gemini::GeminiProvider::new(key.to_string()))),
+        "google" => Ok(Arc::new(gemini::GeminiProvider::new(key.to_string()))),
         "xai" => Ok(Arc::new(xai::XaiProvider::with_key(key.to_string())?)),
         "openai" => Ok(Arc::new(
             openai_compat::OpenAICompatProvider::new("openai", "https://api.openai.com", key.to_string())
                 .with_text_model("gpt-4o")
                 .with_image_model("dall-e-3"),
         )),
-        "claude" => Ok(Arc::new(claude::ClaudeProvider::new(key.to_string()))),
+        "anthropic" => Ok(Arc::new(claude::ClaudeProvider::new(key.to_string()))),
         "groq" => Ok(Arc::new(
             openai_compat::OpenAICompatProvider::new("groq", "https://api.groq.com/openai", key.to_string())
                 .with_text_model("llama-3.3-70b-versatile"),
