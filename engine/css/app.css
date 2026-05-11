@@ -588,7 +588,8 @@
 
 .dark .ae-variations-row label { color: #aaa; }
 
-#variationsInput {
+#variationsInput,
+#maxTokensInput {
   width: 60px;
   padding: 6px 8px;
   border: 1.5px solid #ddd;
@@ -599,7 +600,12 @@
   color: #333;
 }
 
-.dark #variationsInput {
+#maxTokensInput {
+  width: 80px;
+}
+
+.dark #variationsInput,
+.dark #maxTokensInput {
   background: #1e1e1e;
   border-color: #444;
   color: #ddd;

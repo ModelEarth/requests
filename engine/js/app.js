@@ -31,6 +31,7 @@ class ArtsEngine {
       provider:   this.loadPref('provider', 'google'),
       model:      this.loadPref('model', 'gemini-2.5-flash'),
       variations: parseInt(this.loadPref('variations', '1')),
+      maxTokens:  parseInt(this.loadPref('maxTokens', '1024')),
     };
 
     this.init();
@@ -137,6 +138,9 @@ class ArtsEngine {
     const varInput = document.getElementById('variationsInput');
     if (varInput) varInput.value = this.prefs.variations;
 
+    const maxTokensInput = document.getElementById('maxTokensInput');
+    if (maxTokensInput) maxTokensInput.value = this.prefs.maxTokens;
+
     this.syncOutputButtons();
   }
 
@@ -209,6 +213,9 @@ class ArtsEngine {
       if (input) {
         input.placeholder = `Enter a prompt for your ${typeLabel.toLowerCase()}… (Ctrl+Enter to generate)`;
       }
+
+      const maxTokensRow = document.getElementById('maxTokensRow');
+      if (maxTokensRow) maxTokensRow.style.display = type === 'text' ? '' : 'none';
     };
 
     document.querySelectorAll('.ae-type-btn').forEach(btn => {
@@ -232,6 +239,16 @@ class ArtsEngine {
       e.target.value = val;
       this.prefs.variations = val;
       this.savePref('variations', val);
+    });
+
+    // Max tokens input (clamp 1–32000)
+    document.getElementById('maxTokensInput')?.addEventListener('input', e => {
+      let val = Math.max(1, Math.min(32000, parseInt(e.target.value) || 1024));
+      this.prefs.maxTokens = val;
+      this.savePref('maxTokens', val);
+    });
+    document.getElementById('maxTokensInput')?.addEventListener('blur', e => {
+      e.target.value = this.prefs.maxTokens;
     });
 
     // Add scene button
@@ -1055,7 +1072,7 @@ class ArtsEngine {
     const resp = await fetch(`${this.apiBase}/generate/text`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
-      body: JSON.stringify({ prompt: scene.prompt, model: this.prefs.model, max_tokens: 1024 }),
+      body: JSON.stringify({ prompt: scene.prompt, model: this.prefs.model, max_tokens: this.prefs.maxTokens }),
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
     const data = await resp.json();
