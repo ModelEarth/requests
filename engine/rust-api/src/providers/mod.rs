@@ -1,6 +1,7 @@
 pub mod claude;
 pub mod gemini;
 pub mod openai_compat;
+pub mod pollinations;
 pub mod xai;
 
 use std::sync::Arc;
@@ -100,6 +101,9 @@ pub fn build_provider_dynamic(
             openai_compat::OpenAICompatProvider::new("deepseek", "https://api.deepseek.com", key.to_string())
                 .with_text_model("deepseek-chat"),
         )),
+        "pollinations" => Ok(Arc::new(pollinations::PollinationsProvider::new(
+            key.to_string(),
+        ))),
         other => match base_url {
             Some(url) => {
                 tracing::info!("Unknown provider '{other}' — routing via openai_compat at {url}");
