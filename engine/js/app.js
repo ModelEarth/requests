@@ -1056,7 +1056,7 @@ class ArtsEngine {
     const resp = await fetch(`${this.apiBase}/generate/image`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
-      body: JSON.stringify({ prompt: scene.prompt, aspect_ratio: this.ratioToApiString(ratio), response_format: 'url' }),
+      body: JSON.stringify({ prompt: scene.prompt, model: this.prefs.model, aspect_ratio: this.ratioToApiString(ratio), response_format: this.prefs.provider === 'pollinations' ? 'b64_json' : 'url' }),
     });
     if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
     const data = await resp.json();
