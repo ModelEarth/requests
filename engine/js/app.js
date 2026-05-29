@@ -825,8 +825,8 @@ class ArtsEngine {
     if (!hasBrowserKeys && !hasEnvKeys) {
       trigger.innerHTML =
         `<span class="sp-model-copy">` +
-        `<span class="sp-model-name">Add Model Key</span>` +
         `<span class="sp-model-provider">No keys configured</span>` +
+        `<span class="sp-model-name">Add Model Key</span>` +
         `</span>` +
         `<svg height="16" viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
       return;
@@ -838,8 +838,8 @@ class ArtsEngine {
       : (ArtsEngine.PROVIDER_LABELS[this.prefs.provider] || this.prefs.provider);
     trigger.innerHTML =
       `<span class="sp-model-copy">` +
-      `<span class="sp-model-name">${model ? this.escapeHtml(model.label) : 'Select model'}</span>` +
       `<span class="sp-model-provider">${this.escapeHtml(provName)}</span>` +
+      `<span class="sp-model-name">${model ? this.escapeHtml(model.label) : 'Select model'}</span>` +
       `</span>` +
       `<svg height="16" viewBox="0 0 16 16" width="16"><path d="M12.0607 6.74999L8.7071 10.1035C8.31657 10.4941 7.68341 10.4941 7.29288 10.1035L3.93933 6.74999L4.99999 5.68933L7.99999 8.68933L11 5.68933L12.0607 6.74999Z" fill="currentColor"/></svg>`;
   }
@@ -1303,11 +1303,13 @@ class ArtsEngine {
     if (window.AE_API_BASE) this.apiBase = window.AE_API_BASE.replace(/\/$/, '') + '/api';
     const dot   = document.getElementById('backendDot');
     const label = document.getElementById('backendLabel');
+    const startInstruction = document.getElementById('backendStartInstruction');
     try {
       const resp = await fetch(`${this.getApiRoot()}/api/health`, { signal: AbortSignal.timeout(4000) });
       if (resp.ok) {
         const data = await resp.json();
         if (dot) dot.className = 'ae-backend-dot online';
+        if (startInstruction) startInstruction.hidden = true;
         if (label) label.textContent = data.provider
           ? `Backend online on port ${this.getBackendPort()} · ${data.provider} ready`
           : `Backend online on port ${this.getBackendPort()}`;
@@ -1335,6 +1337,7 @@ class ArtsEngine {
       }
     } catch { /* offline */ }
     if (dot) dot.className = 'ae-backend-dot offline';
+    if (startInstruction) startInstruction.hidden = false;
     if (label) label.textContent = `During development, the Arts Engine only runs on local computers. The Runs backend is offline on port ${this.getBackendPort()}. Arts Engine Rust backend offline on port ${this.getBackendPort()}.`;
     // If saved provider has no browser key, fall back to env
     const savedProv = this.loadPref('provider', 'google');

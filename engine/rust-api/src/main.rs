@@ -54,6 +54,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/api/health", get(health))
+        .route("/api/server-keys", get(server_keys))
         .route("/api/models", get(list_models))
         .route("/api/generate/text", post(generate_text))
         .route("/api/generate/image", post(generate_image))
@@ -100,6 +101,10 @@ async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
         available_providers: state.available_providers.clone(),
         message: "Arts Engine API is ready".to_string(),
     })
+}
+
+async fn server_keys(State(state): State<AppState>) -> Json<Vec<String>> {
+    Json(state.available_providers.clone())
 }
 
 async fn list_models(State(state): State<AppState>) -> AppResult<Json<ListModelsResponse>> {
