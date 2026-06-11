@@ -16,6 +16,9 @@ pub struct GeminiProvider {
 
 impl GeminiProvider {
     const BASE_URL: &'static str = "https://generativelanguage.googleapis.com/v1beta";
+    /// Image-editing model ("Nano Banana"). Imagen's :predict endpoint is
+    /// text-to-image only, so image-to-image requests route here instead.
+    const IMAGE_EDIT_MODEL: &'static str = "gemini-2.5-flash-image";
 
     pub fn new(api_key: String) -> Self {
         Self {
@@ -24,6 +27,91 @@ impl GeminiProvider {
             text_model: "gemini-1.5-flash".to_string(),
             image_model: "imagen-3.0-generate-002".to_string(),
         }
+    }
+
+    /// Split a `data:<mime>;base64,<data>` URL into (mime, base64-data).
+    /// Returns None for non-data URLs (Gemini inline_data needs raw bytes).
+    fn parse_data_url(url: &str) -> Option<(String, String)> {
+        let rest = url.strip_prefix("data:")?;
+        let (meta, data) = rest.split_once(',')?;
+        let mime = meta.split(';').next().unwrap_or("image/png").to_string();
+        Some((mime, data.to_string()))
+    }
+
+    /// Image-to-image / editing via gemini-2.5-flash-image's generateContent.
+    /// Input images arrive as data: URLs (uploads or prior outputs) and are
+    /// passed through as inline_data; the prompt becomes a text part.
+    async fn generate_image_edit(
+        &self,
+        prompt: &str,
+        image_urls: &[String],
+    ) -> anyhow::Result<GenerationResponse> {
+        let url = format!(
+            "{}/models/{}:generateContent?key={}",
+            Self::BASE_URL,
+            Self::IMAGE_EDIT_MODEL,
+            self.api_key
+        );
+
+        let mut parts: Vec<Value> = Vec::new();
+        for u in image_urls {
+            match Self::parse_data_url(u) {
+                Some((mime, data)) => {
+                    parts.push(json!({ "inline_data": { "mime_type": mime, "data": data } }));
+                }
+                None => anyhow::bail!(
+                    "Gemini image editing needs an inline image; received a non-data URL"
+                ),
+            }
+        }
+        parts.push(json!({ "text": prompt }));
+
+        let payload = json!({
+            "contents": [{ "parts": parts }],
+            "generationConfig": { "responseModalities": ["TEXT", "IMAGE"] }
+        });
+
+        let raw = self.post_json(&url, payload).await?;
+
+        let media_urls: Vec<String> = raw["candidates"]
+            .as_array()
+            .map(|cands| {
+                cands
+                    .iter()
+                    .flat_map(|c| {
+                        c["content"]["parts"]
+                            .as_array()
+                            .map(|ps| {
+                                ps.iter()
+                                    .filter_map(|p| {
+                                        let inline =
+                                            p.get("inlineData").or_else(|| p.get("inline_data"))?;
+                                        let data = inline["data"].as_str()?;
+                                        let mime = inline["mimeType"]
+                                            .as_str()
+                                            .or_else(|| inline["mime_type"].as_str())
+                                            .unwrap_or("image/png");
+                                        Some(format!("data:{};base64,{}", mime, data))
+                                    })
+                                    .collect::<Vec<_>>()
+                            })
+                            .unwrap_or_default()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let status = if media_urls.is_empty() { "failed" } else { "completed" }.to_string();
+        Ok(GenerationResponse {
+            provider: "google".to_string(),
+            model: Self::IMAGE_EDIT_MODEL.to_string(),
+            status,
+            id: None,
+            text: None,
+            usage: None,
+            media_urls,
+            raw,
+        })
     }
 
     async fn post_json(&self, url: &str, payload: Value) -> anyhow::Result<Value> {
@@ -123,6 +211,12 @@ impl GenerativeModel for GeminiProvider {
         &self,
         request: ImageGenerationRequest,
     ) -> anyhow::Result<GenerationResponse> {
+        // Image-to-image: when an input image is supplied, edit it with
+        // gemini-2.5-flash-image instead of generating fresh from Imagen.
+        if let Some(images) = request.image_urls.as_ref().filter(|v| !v.is_empty()) {
+            return self.generate_image_edit(&request.prompt, images).await;
+        }
+
         let url = format!(
             "{}/models/{}:predict?key={}",
             Self::BASE_URL,

@@ -728,6 +728,7 @@ class ArtsEngine {
         value: m.id,
         label: m.name,
         outputs: ['text', ...(m.outputs || [])],
+        imageInput: !!m.imageInput,
       }));
     }
     // 'env' = backend .env provider; mirror xai models as default
@@ -897,6 +898,11 @@ class ArtsEngine {
         this.renderModelTrigger();
         this.renderModelMenu();
         this.syncOutputButtons();
+        // Let the Node Canvas (and any other listeners) react to the new model,
+        // e.g. to show/hide image-input support per the model's capabilities.
+        window.dispatchEvent(new CustomEvent('ae-model-change', {
+          detail: { provider: pid, model: mid },
+        }));
       });
     });
   }
