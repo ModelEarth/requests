@@ -1015,7 +1015,12 @@ class ArtsEngine {
           await this.generateVideo(scene, (this.selectedSceneIdx ?? 1) - 1);
         }
       } else if (this.prefs.outputType === '3d') {
-        throw new Error('3D output UI is wired, but generate3d() is not implemented yet.');
+        for (let v = 0; v < this.prefs.variations; v++) {
+          this.setStatus('info', this.prefs.variations > 1
+            ? `Generating 3D model ${v + 1} of ${this.prefs.variations}`
+            : 'Generating 3D model — this can take a few minutes');
+          await this.generate3d(scene, (this.selectedSceneIdx ?? 1) - 1);
+        }
       } else {
         for (let v = 0; v < this.prefs.variations; v++) {
           this.setStatus('info', this.prefs.variations > 1
@@ -1135,6 +1140,28 @@ class ArtsEngine {
     throw new Error(`Video generation timed out after 10 minutes (id: ${id})`);
   }
 
+  async generate3d(scene, sceneIdx) {
+    const prompt = scene.prompt || '';
+    this.setStatus('info', `Submitting 3D model: "${prompt.slice(0, 60)}${prompt.length > 60 ? '…' : ''}" — the backend polls until the mesh is ready (up to 5 min)`);
+    const resp = await fetch(`${this.apiBase}/generate/3d`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
+      body: JSON.stringify({
+        prompt,
+        model: this.prefs.model,
+        image_urls: scene.image ? [scene.image] : undefined,
+      }),
+    });
+    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
+    const data = await resp.json();
+    this.lastRaw = data;
+    this.renderRawPanel();
+    this._showRawPanel();
+    const urls = data.media_urls || [];
+    if (!urls.length) throw new Error('3D job completed but no model URL was returned');
+    this.renderGallery(urls.map(url => ({ url, prompt: scene.prompt, type: '3d' })));
+  }
+
   async generateStoryboard(scenes) {
     const resp = await fetch(`${this.apiBase}/generate/storyboard`, {
       method: 'POST',
@@ -1190,13 +1217,25 @@ class ArtsEngine {
       const div = document.createElement('div');
       div.className = 'ae-gallery-item';
       div.style.aspectRatio = this.ratioToCSS(item.aspect_ratio);
-      const media = item.type === 'video'
-        ? `<video src="${this.escapeHtml(item.url)}" controls playsinline style="width:100%;height:100%;object-fit:cover"></video>`
-        : `<img src="${this.escapeHtml(item.url)}" alt="${this.escapeHtml(item.prompt)}" loading="lazy">`;
+      let media;
+      if (item.type === 'video') {
+        media = `<video src="${this.escapeHtml(item.url)}" controls playsinline style="width:100%;height:100%;object-fit:cover"></video>`;
+      } else if (item.type === '3d') {
+        // 3D meshes (.glb/.fbx/.obj) can't render as an <img>; show a model card.
+        media = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:8px;background:#f6f8fa;color:#888;text-align:center;padding:12px">
+            <span class="material-icons" style="font-size:2.4rem;color:#4a90e2">view_in_ar</span>
+            <span style="font-size:0.8rem;word-break:break-word">${this.escapeHtml(item.prompt || '3D model')}</span>
+          </div>`;
+      } else {
+        media = `<img src="${this.escapeHtml(item.url)}" alt="${this.escapeHtml(item.prompt)}" loading="lazy">`;
+      }
+      const viewBtn = item.type === '3d'
+        ? `<a class="ae-item-btn" href="${this.escapeHtml(item.url)}" target="_blank" rel="noopener" style="text-decoration:none">Open</a>`
+        : `<button class="ae-item-btn" onclick="artsEngine.openLightbox('${this.escapeHtml(item.url)}','${item.type||'image'}')">View</button>`;
       div.innerHTML = `
         ${media}
         <div class="ae-item-overlay">
-          <button class="ae-item-btn" onclick="artsEngine.openLightbox('${this.escapeHtml(item.url)}','${item.type||'image'}')">View</button>
+          ${viewBtn}
           <a class="ae-item-btn" href="${this.escapeHtml(item.url)}" download style="text-decoration:none">Save</a>
         </div>`;
       gallery.prepend(div);
@@ -1301,6 +1340,10 @@ class ArtsEngine {
 
   async checkBackendStatus() {
     if (window.AE_API_BASE) this.apiBase = window.AE_API_BASE.replace(/\/$/, '') + '/api';
+    // Re-read browser keys each poll: they may have been decrypted/added after
+    // init, and a stale empty set here would wrongly force the saved selection
+    // back to 'env' and overwrite the user's persisted model choice.
+    this._configuredProviders = this._readConfiguredProviders();
     const dot   = document.getElementById('backendDot');
     const label = document.getElementById('backendLabel');
     const startInstruction = document.getElementById('backendStartInstruction');

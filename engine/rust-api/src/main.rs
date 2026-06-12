@@ -23,7 +23,7 @@ use crate::config::AppConfig;
 use crate::error::{AppError, AppResult};
 use crate::models::{
     HealthResponse, ListModelsResponse, TextGenerationRequest, ImageGenerationRequest,
-    VideoGenerationRequest,
+    ThreeDGenerationRequest, VideoGenerationRequest,
 };
 use crate::providers::{build_provider, build_provider_dynamic, GenerativeModel};
 
@@ -60,6 +60,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/generate/image", post(generate_image))
         .route("/api/generate/video", post(generate_video))
         .route("/api/generate/video/{id}", get(video_status))
+        .route("/api/generate/3d", post(generate_3d))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
@@ -143,6 +144,16 @@ async fn generate_video(
     if let Some(id) = &response.id {
         append_mycontent_csv(&prompt, id);
     }
+    Ok(Json(serde_json::to_value(response)?))
+}
+
+async fn generate_3d(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<ThreeDGenerationRequest>,
+) -> AppResult<Json<serde_json::Value>> {
+    let provider = resolve_request_provider(&state, &headers)?;
+    let response = provider.generate_3d(payload).await?;
     Ok(Json(serde_json::to_value(response)?))
 }
 

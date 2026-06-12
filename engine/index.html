@@ -129,6 +129,53 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
          ================================================================= -->
     <div class="ae-left">
 
+      <!-- Model panel (model keys + selection) — sits directly above Generate -->
+      <div class="ae-panel" id="modelPanel">
+        <div class="ae-output-header">
+
+          <div class="ae-model-section">
+            <h3 class="ae-model-label">Model</h3>
+            <div id="modelRow">
+              <div class="sp-model-wrap">
+                <button class="sp-model-trigger" id="modelTrigger" type="button"></button>
+                <div class="sp-model-menu" id="modelMenu" hidden></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+              <span class="material-icons" id="toggleSettingsBtn" title="Settings"
+                style="cursor:pointer;color:#888;font-size:1.3rem;vertical-align:middle"
+                onclick="toggleSettingsContainer(event)">settings</span>
+              <a href="#" id="toggleAgentsEditor" class="btn btn-nice">My Model Keys</a>
+            </div>
+          </div>
+
+          <div id="settingsContainer" style="display:none;flex:0 0 100%;">
+            <div class="ae-settings-row">
+              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
+                <strong>Backend URL:</strong><br>
+                <code id="apiBaseInput" style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">http://localhost:8082</code>
+              </div>
+              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
+                <strong>Start Rust backend:</strong><br>
+                <code style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">
+                  cd requests/engine/rust-api &amp;&amp; cargo run
+                </code>
+              </div>
+              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
+                Add <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">XAI_API_KEY</code>
+                to <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">docker/.env</code>
+              </div>
+            </div>
+          </div>
+
+          <div id="agentsContainer" style="display:none; flex:0 0 100%; padding-bottom:12px; margin-bottom:12px;"></div>
+
+
+        </div>
+
+        <div id="statusBar" style="display:none"></div>
+      </div>
+
       <!-- Prompt Input Panel -->
       <div class="ae-panel" id="promptPanel">
         <h3>Generate</h3>
@@ -147,7 +194,7 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
                 <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">videocam</span>
                 Video
               </button>
-              <button class="ae-type-btn disabled" id="button3d" data-type="3d" style="display:none;" title="3D output coming soon">
+              <button class="ae-type-btn disabled" id="button3d" data-type="3d" style="display:none;" title="3D model output (Meshy / Tripo)">
                 <span class="material-icons" style="font-size:0.95rem;vertical-align:middle">view_in_ar</span>
                 3D
               </button>
@@ -283,53 +330,6 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
           </button>
 
         </div>
-      </div>
-
-      <!-- Output Type + Generate -->
-      <div class="ae-panel">
-        <div class="ae-output-header">
-
-          <div class="ae-model-section">
-            <h3 class="ae-model-label">Model</h3>
-            <div id="modelRow">
-              <div class="sp-model-wrap">
-                <button class="sp-model-trigger" id="modelTrigger" type="button"></button>
-                <div class="sp-model-menu" id="modelMenu" hidden></div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-              <span class="material-icons" id="toggleSettingsBtn" title="Settings"
-                style="cursor:pointer;color:#888;font-size:1.3rem;vertical-align:middle"
-                onclick="toggleSettingsContainer(event)">settings</span>
-              <a href="#" id="toggleAgentsEditor" class="btn btn-nice">My Model Keys</a>
-            </div>
-          </div>
-
-          <div id="settingsContainer" style="display:none;flex:0 0 100%;">
-            <div class="ae-settings-row">
-              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
-                <strong>Backend URL:</strong><br>
-                <code id="apiBaseInput" style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">http://localhost:8082</code>
-              </div>
-              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
-                <strong>Start Rust backend:</strong><br>
-                <code style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:0.78rem">
-                  cd requests/engine/rust-api &amp;&amp; cargo run
-                </code>
-              </div>
-              <div style="font-size:0.8rem;color:#aaa;line-height:1.6">
-                Add <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">XAI_API_KEY</code>
-                to <code style="background:rgba(0,0,0,0.06);padding:2px 4px;border-radius:4px">docker/.env</code>
-              </div>
-            </div>
-          </div>
-
-          <div id="agentsContainer" style="display:none; flex:0 0 100%; padding-bottom:12px; margin-bottom:12px;"></div>
-
-
-        </div>
-
-        <div id="statusBar" style="display:none"></div>
       </div>
 
       <!-- Storyboard Flowchart Panel -->

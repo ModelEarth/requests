@@ -1,6 +1,7 @@
 pub mod claude;
 pub mod gemini;
 pub mod openai_compat;
+pub mod threed;
 pub mod xai;
 
 use std::sync::Arc;
@@ -10,7 +11,7 @@ use async_trait::async_trait;
 use crate::config::AppConfig;
 use crate::models::{
     GenerationResponse, ImageGenerationRequest, ModelSummary, TextGenerationRequest,
-    VideoGenerationRequest,
+    ThreeDGenerationRequest, VideoGenerationRequest,
 };
 
 #[async_trait]
@@ -21,6 +22,9 @@ pub trait GenerativeModel: Send + Sync {
     async fn generate_image(&self, request: ImageGenerationRequest) -> anyhow::Result<GenerationResponse>;
     async fn generate_video(&self, request: VideoGenerationRequest) -> anyhow::Result<GenerationResponse>;
     async fn video_status(&self, id: &str) -> anyhow::Result<GenerationResponse>;
+    async fn generate_3d(&self, _request: ThreeDGenerationRequest) -> anyhow::Result<GenerationResponse> {
+        anyhow::bail!("{} does not support 3D generation", self.provider_name())
+    }
 }
 
 pub fn build_provider(config: &AppConfig) -> anyhow::Result<Arc<dyn GenerativeModel>> {
@@ -104,6 +108,8 @@ pub fn build_provider_dynamic(
             openai_compat::OpenAICompatProvider::new("pollinations","https://gen.pollinations.ai", key.to_string(),)
             .with_image_model("flux"),
         )),
+        "meshy" => Ok(Arc::new(threed::ThreeDProvider::meshy(key.to_string()))),
+        "tripo" => Ok(Arc::new(threed::ThreeDProvider::tripo(key.to_string()))),
         other => match base_url {
             Some(url) => {
                 tracing::info!("Unknown provider '{other}' — routing via openai_compat at {url}");

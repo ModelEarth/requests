@@ -36,6 +36,18 @@ pub struct VideoGenerationRequest {
     pub image_urls: Option<Vec<String>>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ThreeDGenerationRequest {
+    pub prompt: String,
+    /// Provider-specific selector: for Meshy this is the mode
+    /// (text-to-3d, image-to-3d, …); for Tripo it is the model version (v3.0, …).
+    pub model: Option<String>,
+    /// Reference image(s) for image-to-3d generation.
+    pub image_urls: Option<Vec<String>>,
+    /// Optional style hint (e.g. "realistic", "sculpture").
+    pub art_style: Option<String>,
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub struct UsageSummary {
     pub prompt_tokens: u32,
