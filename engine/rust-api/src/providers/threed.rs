@@ -61,7 +61,11 @@ impl ThreeDProvider {
         let status = resp.status();
         let data: Value = resp.json().await.unwrap_or_else(|_| json!({}));
         if !status.is_success() {
-            anyhow::bail!("{} API error ({}): {}", self.name, status, data);
+            return Err(self.api_error(&status.to_string(), &data));
+        }
+        // Tripo can also report errors in a 200 body as a non-zero code.
+        if self.service == Service::Tripo && data["code"].as_i64().is_some_and(|c| c != 0) {
+            return Err(self.api_error("200 OK", &data));
         }
         Ok(data)
     }
@@ -76,9 +80,21 @@ impl ThreeDProvider {
         let status = resp.status();
         let data: Value = resp.json().await.unwrap_or_else(|_| json!({}));
         if !status.is_success() {
-            anyhow::bail!("{} API error ({}): {}", self.name, status, data);
+            return Err(self.api_error(&status.to_string(), &data));
         }
         Ok(data)
+    }
+
+    /// Build an error from an API response. Tripo wraps errors as
+    /// {code, message, suggestion}. Code 2010 = no API credits / free trial not
+    /// activated: emit the stable sentinel `NO_CREDITS` and let the frontend
+    /// render the wording from per-model config (providers.js noCreditsHint),
+    /// so no user-facing message or URL is hardcoded here.
+    fn api_error(&self, status: &str, data: &Value) -> anyhow::Error {
+        if self.service == Service::Tripo && data["code"].as_i64() == Some(2010) {
+            return anyhow::anyhow!("NO_CREDITS");
+        }
+        anyhow::anyhow!("{} API error ({}): {}", self.name, status, data)
     }
 
     // ---- Meshy ------------------------------------------------------------
@@ -160,23 +176,26 @@ impl ThreeDProvider {
         &self,
         request: ThreeDGenerationRequest,
     ) -> anyhow::Result<GenerationResponse> {
-        let model = request.model.as_deref().unwrap_or("v3.0");
-        let version = tripo_model_version(model);
         if request.image_urls.as_ref().is_some_and(|u| !u.is_empty()) {
             anyhow::bail!(
                 "Tripo image-to-3D requires uploading the image first; use the Meshy provider for image-to-3D"
             );
         }
 
+        // The exact `model_version` string is supplied by the frontend from
+        // providers.js (apiModel). When absent, omit it so Tripo applies its
+        // own current default — no version strings are hardcoded here.
+        let version = request.model.as_deref().filter(|s| !s.is_empty());
+        let mut payload = json!({
+            "type": "text_to_model",
+            "prompt": request.prompt,
+        });
+        if let Some(v) = version {
+            payload["model_version"] = json!(v);
+        }
+
         let submit = self
-            .post(
-                "https://api.tripo3d.ai/v2/openapi/task",
-                json!({
-                    "type": "text_to_model",
-                    "prompt": request.prompt,
-                    "model_version": version
-                }),
-            )
+            .post("https://api.tripo3d.ai/v2/openapi/task", payload)
             .await?;
         let task_id = submit["data"]["task_id"]
             .as_str()
@@ -200,7 +219,7 @@ impl ThreeDProvider {
         let media_urls = tripo_model_urls(&raw);
         Ok(GenerationResponse {
             provider: self.name.clone(),
-            model: version.to_string(),
+            model: version.unwrap_or("default").to_string(),
             status: if media_urls.is_empty() { "failed" } else { "completed" }.to_string(),
             id: Some(task_id),
             text: None,
@@ -255,23 +274,6 @@ fn meshy_model_urls(raw: &Value) -> Vec<String> {
         }
     }
     out
-}
-
-/// Map the friendly model id from providers.js to the date-stamped
-/// `model_version` string Tripo's API requires. A value that already looks
-/// date-stamped (contains '-') is passed through unchanged so newer versions
-/// work without a code change.
-fn tripo_model_version(model: &str) -> &str {
-    match model {
-        "v3.1" => "v3.1-20260211",
-        "v3.0" => "v3.0-20250812",
-        "v2.5" => "v2.5-20250123",
-        "v2.0" => "v2.0-20240919",
-        "p1" | "P1" => "P1-20260311",
-        "turbo" | "Turbo" => "Turbo-v1.0-20250506",
-        other if other.contains('-') => other, // already a full version string
-        _ => "v3.0-20250812",                   // sensible default
-    }
 }
 
 /// Tripo returns output.model (and pbr_model) as direct URLs.

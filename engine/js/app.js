@@ -728,6 +728,8 @@ class ArtsEngine {
         value: m.id,
         label: m.name,
         outputs: ['text', ...(m.outputs || [])],
+        apiModel: m.apiModel,           // exact id/version for the provider API (config-driven)
+        noCreditsHint: m.noCreditsHint, // message shown when the account has no credits
       }));
     }
     // 'env' = backend .env provider; mirror xai models as default
@@ -1143,16 +1145,27 @@ class ArtsEngine {
   async generate3d(scene, sceneIdx) {
     const prompt = scene.prompt || '';
     this.setStatus('info', `Submitting 3D model: "${prompt.slice(0, 60)}${prompt.length > 60 ? '…' : ''}" — the backend polls until the mesh is ready (up to 5 min)`);
+    // Prefer the config-driven apiModel (e.g. Tripo's date-stamped version)
+    // over the friendly id, so version strings stay in providers.js, not code.
+    const modelCfg = this.getCurrentModelConfig();
     const resp = await fetch(`${this.apiBase}/generate/3d`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
       body: JSON.stringify({
         prompt,
-        model: this.prefs.model,
+        model: modelCfg?.apiModel || this.prefs.model,
         image_urls: scene.image ? [scene.image] : undefined,
       }),
     });
-    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `HTTP ${resp.status}`); }
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      // Backend emits the stable sentinel 'NO_CREDITS' for an out-of-credits
+      // account; the wording lives in providers.js (per-model noCreditsHint).
+      if (e.error === 'NO_CREDITS') {
+        throw new Error(modelCfg?.noCreditsHint || 'This 3D provider account has no API credits — add credits and retry.');
+      }
+      throw new Error(e.error || `HTTP ${resp.status}`);
+    }
     const data = await resp.json();
     this.lastRaw = data;
     this.renderRawPanel();
@@ -1381,7 +1394,7 @@ class ArtsEngine {
     } catch { /* offline */ }
     if (dot) dot.className = 'ae-backend-dot offline';
     if (startInstruction) startInstruction.hidden = false;
-    if (label) label.textContent = `During development, the Arts Engine only runs on local computers. The Runs backend is offline on port ${this.getBackendPort()}. Arts Engine Rust backend offline on port ${this.getBackendPort()}.`;
+    if (label) label.innerHTML = `The Arts Engine only runs on local computers during our development phase. Turn on the Arts Engine Rust backend locally on port ${this.getBackendPort()} using the steps in the <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>`;
     // If saved provider has no browser key, fall back to env
     const savedProv = this.loadPref('provider', 'google');
     if (!this._configuredProviders.has(savedProv) && savedProv !== 'env') {
