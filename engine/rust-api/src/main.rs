@@ -2,6 +2,7 @@ mod config;
 mod error;
 mod models;
 mod providers;
+mod task3d;
 
 use std::io::Write;
 use std::sync::Arc;
@@ -147,13 +148,19 @@ async fn generate_video(
     Ok(Json(serde_json::to_value(response)?))
 }
 
+/// 3D generation is fully config-driven (see task3d): the request body carries
+/// the provider's task-API spec from providers.js, and the API key comes from
+/// the X-Provider-Key header. No provider object or routing is involved.
 async fn generate_3d(
-    State(state): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<ThreeDGenerationRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let provider = resolve_request_provider(&state, &headers)?;
-    let response = provider.generate_3d(payload).await?;
+    let key = headers
+        .get("x-provider-key")
+        .and_then(|v| v.to_str().ok())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError(anyhow::anyhow!("3D generation requires a provider API key (X-Provider-Key)")))?;
+    let response = task3d::run(payload, key).await?;
     Ok(Json(serde_json::to_value(response)?))
 }
 

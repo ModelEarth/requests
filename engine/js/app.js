@@ -729,6 +729,7 @@ class ArtsEngine {
         label: m.name,
         outputs: ['text', ...(m.outputs || [])],
         apiModel: m.apiModel,           // exact id/version for the provider API (config-driven)
+        apiMode: m.apiMode,             // which task3d.modes entry this model uses
         noCreditsHint: m.noCreditsHint, // message shown when the account has no credits
       }));
     }
@@ -1142,20 +1143,60 @@ class ArtsEngine {
     throw new Error(`Video generation timed out after 10 minutes (id: ${id})`);
   }
 
+  // Replace {prompt}/{model}/{image_url} placeholders in a task3d body template.
+  _fillTemplate(value, subs) {
+    if (typeof value === 'string') {
+      return value.replace(/\{(\w+)\}/g, (m, k) => (k in subs ? subs[k] : m));
+    }
+    if (Array.isArray(value)) return value.map(v => this._fillTemplate(v, subs));
+    if (value && typeof value === 'object') {
+      const out = {};
+      for (const [k, v] of Object.entries(value)) out[k] = this._fillTemplate(v, subs);
+      return out;
+    }
+    return value;
+  }
+
   async generate3d(scene, sceneIdx) {
     const prompt = scene.prompt || '';
     this.setStatus('info', `Submitting 3D model: "${prompt.slice(0, 60)}${prompt.length > 60 ? '…' : ''}" — the backend polls until the mesh is ready (up to 5 min)`);
-    // Prefer the config-driven apiModel (e.g. Tripo's date-stamped version)
-    // over the friendly id, so version strings stay in providers.js, not code.
+
+    // Build the generic task spec entirely from providers.js config, so the
+    // backend stays provider-agnostic. providers.js is the single source of
+    // truth for endpoints, request bodies and response parsing.
     const modelCfg = this.getCurrentModelConfig();
+    const providerCfg = (window.KeyManagerProviders || []).find(p => p.id === this.prefs.provider);
+    const spec = providerCfg?.task3d;
+    if (!spec) throw new Error(`No 3D configuration found for provider "${this.prefs.provider}"`);
+    const mode = modelCfg?.apiMode || modelCfg?.value;
+    const modeSpec = spec.modes?.[mode];
+    if (!modeSpec) throw new Error(`3D mode "${mode}" is not configured for "${this.prefs.provider}"`);
+
+    const subs = {
+      prompt,
+      model: modelCfg?.apiModel || modelCfg?.value || '',
+      image_url: scene.image || '',
+    };
+    const reqBody = {
+      provider: this.prefs.provider,
+      model: modelCfg?.value || '',
+      submit_url: String(spec.base || '').replace(/\/$/, '') + (modeSpec.submitPath || ''),
+      submit_body: this._fillTemplate(modeSpec.body, subs),
+      task_id_path: spec.taskIdPath,
+      status_value_path: spec.statusValuePath,
+      status_success: spec.statusSuccess,
+      status_failure: spec.statusFailure,
+      error_message_path: spec.errorMessagePath ?? null,
+      output_path: spec.outputPath,
+      output_keys: spec.outputKeys,
+      error_code_path: spec.errorCodePath ?? null,
+      no_credits_code: spec.noCreditsCode ?? null,
+    };
+
     const resp = await fetch(`${this.apiBase}/generate/3d`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.buildProviderHeaders() },
-      body: JSON.stringify({
-        prompt,
-        model: modelCfg?.apiModel || this.prefs.model,
-        image_urls: scene.image ? [scene.image] : undefined,
-      }),
+      body: JSON.stringify(reqBody),
     });
     if (!resp.ok) {
       const e = await resp.json().catch(() => ({}));

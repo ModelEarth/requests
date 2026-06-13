@@ -36,16 +36,44 @@ pub struct VideoGenerationRequest {
     pub image_urls: Option<Vec<String>>,
 }
 
+/// Generic, config-driven spec for a task-based 3D generation API.
+///
+/// The frontend builds this from the provider's `task3d` settings in
+/// providers.js, so the backend stays provider-agnostic: it submits a task,
+/// polls until done, and extracts model URLs — all using the paths/values
+/// described here. No Meshy/Tripo specifics live in backend code.
 #[derive(Debug, Deserialize)]
 pub struct ThreeDGenerationRequest {
-    pub prompt: String,
-    /// Provider-specific selector: for Meshy this is the mode
-    /// (text-to-3d, image-to-3d, …); for Tripo it is the model version (v3.0, …).
+    /// Endpoint to POST the task to. Status is polled at `{submit_url}/{task_id}`.
+    pub submit_url: String,
+    /// Fully-formed request body (placeholders already substituted by the frontend).
+    pub submit_body: Value,
+    /// Dot path to the task id in the submit response (e.g. "result", "data.task_id").
+    pub task_id_path: String,
+    /// Dot path to the status value in a poll response (e.g. "status", "data.status").
+    pub status_value_path: String,
+    /// Status values that mean the task finished successfully.
+    pub status_success: Vec<String>,
+    /// Status values that mean the task failed.
+    pub status_failure: Vec<String>,
+    /// Optional dot path to a failure message in a poll response.
+    #[serde(default)]
+    pub error_message_path: Option<String>,
+    /// Dot path to the output object holding model URLs (e.g. "model_urls", "data.output").
+    pub output_path: String,
+    /// Keys to read from the output object, in preference order (e.g. ["glb","fbx"]).
+    pub output_keys: Vec<String>,
+    /// Optional dot path to a numeric API error code (e.g. Tripo's "code").
+    #[serde(default)]
+    pub error_code_path: Option<String>,
+    /// Error code that means "no API credits" → surfaced as the NO_CREDITS sentinel.
+    #[serde(default)]
+    pub no_credits_code: Option<i64>,
+    /// Optional labels echoed back in the response (not used for the API call).
+    #[serde(default)]
+    pub provider: Option<String>,
+    #[serde(default)]
     pub model: Option<String>,
-    /// Reference image(s) for image-to-3d generation.
-    pub image_urls: Option<Vec<String>>,
-    /// Optional style hint (e.g. "realistic", "sculpture").
-    pub art_style: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
