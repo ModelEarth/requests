@@ -16,7 +16,7 @@
 		].join('');
 
 	const apiProviders = [
-		'CLAUDE_API_KEY',
+		'ANTHROPIC_API_KEY',
 		'GEMINI_API_KEY',
 		'OPENAI_API_KEY',
 		'XAI_API_KEY',
@@ -29,7 +29,7 @@
 	];
 
 	const PROVIDER_LABELS = {
-		'CLAUDE_API_KEY':     'Claude',
+		'ANTHROPIC_API_KEY':     'Claude',
 		'GEMINI_API_KEY':     'Gemini',
 		'OPENAI_API_KEY':     'OpenAI',
 		'XAI_API_KEY':        'xAI',

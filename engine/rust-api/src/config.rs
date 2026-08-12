@@ -13,7 +13,6 @@ pub struct AppConfig {
     pub video_model: String,
     pub openai_api_key: Option<String>,
     pub gemini_api_key: Option<String>,
-    pub claude_api_key: Option<String>,
     pub anthropic_api_key: Option<String>,
 }
 
@@ -43,7 +42,6 @@ impl AppConfig {
             video_model: get_optional("XAI_VIDEO_MODEL").unwrap_or_else(|| "grok-imagine-video".to_string()),
             openai_api_key: get_optional("OPENAI_API_KEY"),
             gemini_api_key: get_optional("GEMINI_API_KEY"),
-            claude_api_key: get_optional("CLAUDE_API_KEY").or_else(|| get_optional("ANTHROPIC_API_KEY")),
             anthropic_api_key: get_optional("ANTHROPIC_API_KEY"),
         };
 

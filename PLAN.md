@@ -270,7 +270,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 ### `src/config.rs` — AppConfig
 
-Fields: `server_host`, `server_port` (default 8091), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_api_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `claude_api_key: Option<String>`.
+Fields: `server_host`, `server_port` (default 8091), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_api_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `anthropic_api_key: Option<String>`.
 
 **Multi-path `.env` discovery** — try each candidate in order, stop at first found:
 ```rust

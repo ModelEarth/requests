@@ -50,10 +50,10 @@ pub fn build_provider(config: &AppConfig) -> anyhow::Result<Arc<dyn GenerativeMo
         }
         "anthropic" => {
             let key = config
-                .claude_api_key
+                .anthropic_api_key
                 .clone()
                 .filter(|k| !k.is_empty())
-                .ok_or_else(|| anyhow::anyhow!("Missing CLAUDE_API_KEY for anthropic provider"))?;
+                .ok_or_else(|| anyhow::anyhow!("Missing ANTHROPIC_API_KEY for anthropic provider"))?;
             Ok(Arc::new(claude::ClaudeProvider::new(key)))
         }
         other => anyhow::bail!("Unsupported provider: {other}"),

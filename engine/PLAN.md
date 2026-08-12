@@ -288,7 +288,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 ### `src/config.rs` — AppConfig
 
-Fields: `server_host`, `server_port` (default 8082 for claude agent), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_api_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `claude_api_key: Option<String>`.
+Fields: `server_host`, `server_port` (default 8082 for claude agent), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_api_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `anthropic_api_key: Option<String>`.
 
 **Port resolution:** Reads `ARTS_ENGINE_HOST`/`ARTS_ENGINE_PORT` first, falls back to `SERVER_HOST`/`SERVER_PORT`, defaults to `127.0.0.1:8082`. This prevents `SERVER_PORT=8081` (the team server) from overriding the arts engine port.
 

@@ -51,8 +51,7 @@ async fn main() -> anyhow::Result<()> {
     if !config.xai_api_key.is_empty()        { available_providers.push("xai".to_string()); }
     if config.openai_api_key.is_some()        { available_providers.push("openai".to_string()); }
     if config.gemini_api_key.is_some()        { available_providers.push("google".to_string()); }
-    if config.claude_api_key.is_some()
-        || config.anthropic_api_key.is_some() { available_providers.push("anthropic".to_string()); }
+    if config.anthropic_api_key.is_some() { available_providers.push("anthropic".to_string()); }
 
     let app_state = AppState { provider, available_providers };
 
