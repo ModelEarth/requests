@@ -73,8 +73,11 @@ fn load_dotenv_candidates() {
 
         if let Some(env_file_setting) = env_file_setting {
             let env_path: PathBuf = automation_dir.join(env_file_setting);
-            if env_path.exists() {
-                let _ = dotenvy::from_path(&env_path);
+            // Only stop here on an actual successful load. A file that
+            // exists but fails to parse (bad encoding, malformed line) must
+            // fall through to the plain .env candidates below instead of
+            // silently leaving every env var unset.
+            if env_path.exists() && dotenvy::from_path(&env_path).is_ok() {
                 return;
             }
         }
@@ -89,11 +92,27 @@ fn load_dotenv_candidates() {
     }
 }
 
+// Strips a trailing, whitespace-preceded inline comment (e.g.
+// "../foo.env  # laptop"), mirroring
+// chat/lib/parse-env-file-setting.mjs's `.replace(/\s+#.*$/, '')` so a
+// hand-edited paths.yaml line doesn't resolve to a bogus path with the
+// comment text still attached.
+fn strip_inline_comment(s: &str) -> &str {
+    let mut prev_is_space = false;
+    for (i, c) in s.char_indices() {
+        if c == '#' && prev_is_space {
+            return &s[..i];
+        }
+        prev_is_space = c.is_whitespace();
+    }
+    s
+}
+
 fn parse_env_file_setting(raw: &str) -> Option<String> {
     raw.lines().find_map(|line| {
         let trimmed = line.trim();
-        trimmed.strip_prefix("env_file:").map(|value| {
-            value.trim().trim_matches(|c| c == '"' || c == '\'').to_string()
-        })
+        let value = trimmed.strip_prefix("env_file:")?;
+        let value = strip_inline_comment(value).trim().trim_matches(|c| c == '"' || c == '\'');
+        if value.is_empty() { None } else { Some(value.to_string()) }
     })
 }
