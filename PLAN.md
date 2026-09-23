@@ -43,7 +43,7 @@ Track progress in your copy in case of interruption:
 - [ ] `rust-api/src/providers/xai.rs` written
 - [ ] `rust-api/src/providers/stub.rs` written
 - [ ] `rust-api/src/main.rs` written
-- [ ] `docker/.env.example` updated with `XAI_API_KEY`, `XAI_API_URL`
+- [ ] `automation/.env.example` updated with `XAI_API_KEY`, `XAI_API_URL`
 - [ ] `cargo check` passes
 - [ ] End time and total time recorded
 
@@ -272,14 +272,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 Fields: `server_host`, `server_port` (default 8091), `provider` (from `GEN_MODEL_PROVIDER`, default `"xai"`), `xai_api_key`, `xai_api_url`, `text_model`, `image_model`, `video_model`, `openai_api_key: Option<String>`, `gemini_api_key: Option<String>`, `anthropic_api_key: Option<String>`.
 
-**Multi-path `.env` discovery** — try each candidate in order, stop at first found:
-```rust
-let candidates = [".env", "../.env", "../../.env", "../../../docker/.env",
-                  "../../docker/.env", "../docker/.env", "docker/.env"];
-for path in candidates {
-    if Path::new(path).exists() { let _ = dotenvy::from_path(path); break; }
-}
-```
+**Env file discovery** — resolve `automation/paths.yaml`'s `env_file:` key
+first (same as `chat/lib/env-loader.ts`), falling back to a plain `.env` at
+a few candidate depths for a standalone checkout with no `automation/`
+folder. See `load_dotenv_candidates()` in `src/config.rs` for the actual
+implementation.
 
 Model defaults (all overridable via env):
 - `XAI_TEXT_MODEL` → `"grok-3-mini-beta"`
@@ -413,7 +410,7 @@ Base URL: `https://api.x.ai/v1` (override with `XAI_API_URL` in `.env`)
 
 ### Environment Variables
 
-Add to `docker/.env` (webroot-level, shared across all tools):
+Add to your local env file (the one `automation/paths.yaml` points at — webroot-level, shared across all tools):
 
 ```bash
 XAI_API_KEY=your-key-from-console.x.ai
@@ -425,7 +422,7 @@ GEN_MODEL_PROVIDER=xai           # switch to openai/gemini/claude when stubs are
 SERVER_PORT=8091                  # arts engine API port (separate from any other API on 8081)
 ```
 
-Also update `docker/.env.example` with placeholder values for all new keys.
+Also update `automation/.env.example` with placeholder values for all new keys.
 
 ---
 
@@ -448,7 +445,7 @@ scene,prompt,aspect_ratio,style,notes,Naics,Industry,Count
 3. Implement `js/app.js` (ArtsEngine class per UX guide above)
 4. Build `rust-api/` following the module structure above
 5. Run `cargo check` from `rust-api/` — fix any errors before proceeding
-6. Add `XAI_API_KEY` to `docker/.env`
+6. Add `XAI_API_KEY` to your local env file (see `automation/paths.yaml`)
 7. Start backend: `cd rust-api && cargo run`
 8. Verify: `curl http://localhost:8091/api/health`
 9. Open `http://localhost:8887/requests/[agent]/` in browser
@@ -473,6 +470,6 @@ scene,prompt,aspect_ratio,style,notes,Naics,Industry,Count
 - **X.ai API Docs**: https://docs.x.ai/docs
 - **api_xai Rust crate**: https://docs.rs/api_xai/latest/api_xai/
 - **FloraFauna.ai** — storyboard flowchart style reference
-- **docker/.env** — API keys and server config (webroot-level, gitignored)
+- **local env file** — API keys and server config, at the path `automation/paths.yaml` points to (webroot-level, gitignored)
 - **projects/js/issues.js** — GitHub token widget (reuse `GitHubIssuesManager`)
 - **projects/css/issues.css** — widget styles (include in page)

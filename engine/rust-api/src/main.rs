@@ -79,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 /// Return a per-request provider when the frontend supplies X-Provider-Name and
-/// X-Provider-Key headers (local storage key takes priority over docker/.env).
+/// X-Provider-Key headers (local storage key takes priority over the local env file).
 /// X-Provider-URL is optional: required only for unknown provider names, which
 /// are routed through openai_compat as a fallback.
 /// Falls back to the default AppState provider when headers are absent.

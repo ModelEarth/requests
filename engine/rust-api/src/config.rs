@@ -1,5 +1,6 @@
 use std::env;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug)]
 pub struct AppConfig {
@@ -57,21 +58,42 @@ fn get_optional(key: &str) -> Option<String> {
     env::var(key).ok().map(|value| value.trim().to_string()).filter(|value| !value.is_empty())
 }
 
+/// Reads the env file the same way lib/env-loader.ts does: `automation/`'s
+/// `paths.yaml` `env_file:` key, instead of a hardcoded docker/.env path. If
+/// paths.yaml doesn't exist yet, or has no env_file: set, this is a no-op —
+/// run automation/sync-config.sh once, or add env_file: by hand. Falls back
+/// further to a plain `.env` file at a few candidate depths, for a
+/// standalone checkout with no automation/ folder.
 fn load_dotenv_candidates() {
-    let candidates = [
-        ".env",
-        "../.env",
-        "../../.env",
-        "../../../docker/.env",
-        "../../docker/.env",
-        "../docker/.env",
-        "docker/.env",
-    ];
+    let automation_candidates = ["automation", "../automation", "../../automation", "../../../automation"];
 
+    if let Some(automation_dir) = automation_candidates.iter().map(Path::new).find(|p| p.is_dir()) {
+        let paths_yaml = automation_dir.join("paths.yaml");
+        let env_file_setting = fs::read_to_string(&paths_yaml).ok().and_then(|raw| parse_env_file_setting(&raw));
+
+        if let Some(env_file_setting) = env_file_setting {
+            let env_path: PathBuf = automation_dir.join(env_file_setting);
+            if env_path.exists() {
+                let _ = dotenvy::from_path(&env_path);
+                return;
+            }
+        }
+    }
+
+    let candidates = [".env", "../.env", "../../.env", "../../../.env"];
     for path in candidates {
         if Path::new(path).exists() {
             let _ = dotenvy::from_path(path);
             break;
         }
     }
+}
+
+fn parse_env_file_setting(raw: &str) -> Option<String> {
+    raw.lines().find_map(|line| {
+        let trimmed = line.trim();
+        trimmed.strip_prefix("env_file:").map(|value| {
+            value.trim().trim_matches(|c| c == '"' || c == '\'').to_string()
+        })
+    })
 }

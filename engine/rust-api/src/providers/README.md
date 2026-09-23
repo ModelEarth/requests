@@ -72,7 +72,9 @@ so `xai.rs` remains its own file regardless of how many other providers share
 
 ## Provider selection at runtime
 
-`build_provider` (startup, reads `docker/.env`) and `build_provider_dynamic`
+`build_provider` (startup, reads the local env file — see `config.rs`'s
+`load_dotenv_candidates`, which resolves it via `automation/paths.yaml`) and
+`build_provider_dynamic`
 (per-request, reads `X-Provider-Name` / `X-Provider-Key` / `X-Provider-URL`
 headers from the frontend) both match on a provider name string and return
 `Arc<dyn GenerativeModel>`.

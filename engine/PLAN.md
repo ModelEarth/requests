@@ -49,7 +49,7 @@ Track progress in your copy in case of interruption:
 - [x] `rust-api/src/providers/xai.rs` written
 - [x] `rust-api/src/providers/stub.rs` written
 - [x] `rust-api/src/main.rs` written
-- [x] `docker/.env.example` updated with `XAI_API_KEY`, `XAI_API_URL`
+- [x] `automation/.env.example` updated with `XAI_API_KEY`, `XAI_API_URL`
 - [x] `cargo check` passes
 - [ ] End time and total time recorded
 
@@ -86,7 +86,7 @@ js/
 
 ## Port Configuration
 
-This claude agent uses `ARTS_ENGINE_PORT=8082` (from `docker/.env.example`).
+This claude agent uses `ARTS_ENGINE_PORT=8082` (from `automation/.env.example`).
 
 The `config.rs` reads `ARTS_ENGINE_HOST`/`ARTS_ENGINE_PORT` first, falling back to `SERVER_HOST`/`SERVER_PORT`, defaulting to `127.0.0.1:8082`. This avoids conflicts with the team server on port 8081.
 
@@ -293,13 +293,11 @@ Fields: `server_host`, `server_port` (default 8082 for claude agent), `provider`
 **Port resolution:** Reads `ARTS_ENGINE_HOST`/`ARTS_ENGINE_PORT` first, falls back to `SERVER_HOST`/`SERVER_PORT`, defaults to `127.0.0.1:8082`. This prevents `SERVER_PORT=8081` (the team server) from overriding the arts engine port.
 
 **Multi-path `.env` discovery** — try each candidate in order, stop at first found:
-```rust
-let candidates = [".env", "../.env", "../../.env", "../../../docker/.env",
-                  "../../docker/.env", "../docker/.env", "docker/.env"];
-for path in candidates {
-    if Path::new(path).exists() { let _ = dotenvy::from_path(path); break; }
-}
-```
+Env file discovery resolves `automation/paths.yaml`'s `env_file:` key
+first (same as `chat/lib/env-loader.ts`), falling back to a plain `.env` at
+a few candidate depths for a standalone checkout with no `automation/`
+folder. See `load_dotenv_candidates()` in `src/config.rs` for the actual
+implementation.
 
 Model defaults (all overridable via env):
 - `XAI_TEXT_MODEL` → `"grok-3-mini-beta"`
@@ -433,7 +431,7 @@ Base URL: `https://api.x.ai/v1` (override with `XAI_API_URL` in `.env`)
 
 ### Environment Variables
 
-Add to `docker/.env` (webroot-level, shared across all tools):
+Add to your local env file (the one `automation/paths.yaml` points at — webroot-level, shared across all tools):
 
 ```bash
 XAI_API_KEY=your-key-from-console.x.ai
@@ -445,7 +443,7 @@ GEN_MODEL_PROVIDER=xai           # switch to openai/gemini/claude when stubs are
 ARTS_ENGINE_PORT=8082             # claude agent arts engine API port
 ```
 
-Also update `docker/.env.example` with placeholder values for all new keys.
+Also update `automation/.env.example` with placeholder values for all new keys.
 
 ---
 
@@ -468,7 +466,7 @@ scene,prompt,aspect_ratio,style,notes,Naics,Industry,Count
 3. Implement `js/app.js` (ArtsEngine class per UX guide above)
 4. Build `rust-api/` following the module structure above
 5. Run `cargo check` from `rust-api/` — fix any errors before proceeding
-6. Add `XAI_API_KEY` to `docker/.env`
+6. Add `XAI_API_KEY` to your local env file (see `automation/paths.yaml`)
 7. Start backend: `cd rust-api && cargo run`
 8. Verify: `curl http://localhost:8082/api/health`
 9. Open `http://localhost:8887/requests/claude/` in browser
@@ -493,6 +491,6 @@ scene,prompt,aspect_ratio,style,notes,Naics,Industry,Count
 - **X.ai API Docs**: https://docs.x.ai/docs
 - **api_xai Rust crate**: https://docs.rs/api_xai/latest/api_xai/
 - **FloraFauna.ai** — storyboard flowchart style reference
-- **docker/.env** — API keys and server config (webroot-level, gitignored)
+- **local env file** — API keys and server config, at the path `automation/paths.yaml` points to (webroot-level, gitignored)
 - **projects/js/issues.js** — GitHub token widget (reuse `GitHubIssuesManager`)
 - **projects/css/issues.css** — widget styles (include in page)
