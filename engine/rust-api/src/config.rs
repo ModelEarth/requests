@@ -59,7 +59,7 @@ fn get_optional(key: &str) -> Option<String> {
 }
 
 /// Reads the env file the same way lib/env-loader.ts does: `automation/`'s
-/// `paths.yaml` `env_file:` key, instead of a hardcoded docker/.env path. If
+/// `paths.yaml` `env_file:` key. If
 /// paths.yaml doesn't exist yet, or has no env_file: set, this is a no-op —
 /// run automation/sync-config.sh once, or add env_file: by hand. Falls back
 /// further to a plain `.env` file at a few candidate depths, for a

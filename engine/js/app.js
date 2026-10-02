@@ -864,7 +864,7 @@ class ArtsEngine {
   // Provider / model data — browser keys (settings_api-keys) take priority over backend .env
   // -------------------------------------------------------------------------
 
-  // Derived from window.KeyManagerProviders (chat/keys/providers.js — canonical source).
+  // Derived from window.KeyManagerProviders (keys/providers.js — canonical source).
   // text output is assumed for all models; only 'image'/'video' appear in providers.js outputs field.
   static get PROVIDER_MODELS() {
     const reg = window.KeyManagerProviders;

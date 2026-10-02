@@ -490,8 +490,8 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
   <img id="aeLightboxImg" src="" alt="Generated image">
 </div>
 
-<script type="text/javascript" src="/chat/keys/providers.js"></script>
-<script type="text/javascript" src="/chat/keys/key-manager.js"></script>
+<script type="text/javascript" src="/keys/providers.js"></script>
+<script type="text/javascript" src="/keys/key-manager.js"></script>
 <script>if (window.KeyManager) window.KeyManager.initCrypto().catch(function () {});</script>
 <script type="text/javascript" src="js/app.js"></script>
 <script type="text/javascript" src="js/node-canvas.js"></script>
@@ -667,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function ensureAgentsAssets() {
     if (!agentsAssetsPromise) {
       agentsAssetsPromise = Promise.all([
-        loadStylesheetOnce('/chat/keys/style.css', 'kmStylesheet'),
+        loadStylesheetOnce('/keys/style.css', 'kmStylesheet'),
       ]);
     }
     return agentsAssetsPromise;

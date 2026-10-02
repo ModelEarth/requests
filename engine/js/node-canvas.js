@@ -12,7 +12,7 @@
  *                     accordingly, so a Generate output can feed another node.
  *
  * Per-node model + key resolution reuses ArtsEngine.PROVIDER_MODELS /
- * PROVIDER_LABELS (sourced from chat/keys/providers.js, incl. the `imageInput`
+ * PROVIDER_LABELS (sourced from keys/providers.js, incl. the `imageInput`
  * and `outputs` flags) and the page's stored provider keys. Generation posts
  * to {apiBase}/generate/{image|text|video}; image input is forwarded as
  * image_urls and handled server-side per provider.
