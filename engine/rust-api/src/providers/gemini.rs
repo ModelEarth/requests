@@ -22,7 +22,7 @@ impl GeminiProvider {
         Self {
             api_key,
             http_client: reqwest::Client::new(),
-            text_model: "gemini-1.5-flash".to_string(),
+            text_model: "gemini-2.5-flash".to_string(),
             image_model: "imagen-4.0-generate-001".to_string(),
             // Multimodal model that accepts image input and returns images
             // ("Nano Banana") — used for img2img / editing via :generateContent.

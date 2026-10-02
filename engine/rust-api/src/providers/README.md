@@ -9,7 +9,7 @@ provider is active at runtime.
 |------|--------|
 | `openai_compat.rs` | OpenAI, Groq, Fireworks AI, Together AI, Mistral, any OpenAI-wire-format service |
 | `claude.rs` | Anthropic Claude — own wire format, see divergences below |
-| `gemini.rs` | Google Gemini (text) and Imagen (image) |
+| `gemini.rs` | Google Gemini (text, image editing) and Imagen (image) |
 | `xai.rs` | [xAI](https://console.x.ai) Grok via the `api_xai` crate |
 <br>
 
@@ -28,6 +28,8 @@ OpenAICompatProvider::new("groq", "https://api.groq.com/openai", key)
 
 ## Default Provider List (includes URLs)
 
+Provider names are the values matched by `build_provider_dynamic` (the `X-Provider-Name` header).
+
 | Provider      | X-Provider-URL Hardcoded | Default text model |
 |---------------|----------|--------------------|
 | `openai`      | `https://api.openai.com` | `gpt-4o` |
@@ -37,8 +39,9 @@ OpenAICompatProvider::new("groq", "https://api.groq.com/openai", key)
 | `mistral`     | `https://api.mistral.ai` | `mistral-large-latest` |
 | `perplexity`  | `https://api.perplexity.ai` | `llama-3.1-sonar-large-128k-online` |
 | `deepseek`    | `https://api.deepseek.com` | `deepseek-chat` |
-| `claude`      | *(own file — see below)* | `claude-sonnet-4-6` |
-| `gemini`      | *(own file — see below)* | `gemini-2.0-flash` |
+| `pollinations` | `https://gen.pollinations.ai` | *(image only: `flux`)* |
+| `anthropic`   | *(own file `claude.rs` — see below)* | `claude-sonnet-4-6` |
+| `google`      | *(own file `gemini.rs` — see below)* | `gemini-2.5-flash` |
 | `xai`         | *(own crate — see below)* | `grok-3-mini-beta` |
 
 <br>
@@ -50,10 +53,17 @@ OpenAICompatProvider::new("groq", "https://api.groq.com/openai", key)
 
 **Gemini** uses a different request structure. Text generation goes to
 `/v1beta/models/{model}:generateContent` with a `contents[].parts[]` nesting
-rather than a flat `messages[]` array. Image generation (`Imagen`) goes to a
-separate `:predict` endpoint and returns base64-encoded bytes rather than URLs.
-Video generation (Veo) is a long-running operation polled via a separate status
-call. These shapes can't be expressed as simple field substitutions in a shared
+rather than a flat `messages[]` array, and the key is sent as a `?key=` query
+parameter rather than a `Bearer` header. The response text is at
+`candidates[0].content.parts[0].text` (not `choices[0].message.content`), and
+token counts are in `usageMetadata` (`promptTokenCount`, `candidatesTokenCount`)
+rather than `usage`. A system prompt is sent as the first text part, since
+there is no `system` message role. Image generation (`Imagen`) goes to a
+separate `:predict` endpoint and returns base64-encoded bytes rather than URLs;
+image editing (when reference images are supplied) goes to
+`gemini-2.5-flash-image` via `:generateContent`. Video generation (Veo) would be
+a long-running operation polled via a separate status call — it is not yet
+implemented, so `generate_video` returns an error. These shapes can't be expressed as simple field substitutions in a shared
 struct without closures that become as long as a dedicated file.
 
 **Claude** diverges at the system prompt: the Anthropic API takes `system` as a
