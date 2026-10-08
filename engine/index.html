@@ -714,7 +714,10 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function() {
           KeyManager.migrateFromLegacy();
           KeyManager.init(agentsContainer, {
-            serverKeysUrl: (window.AE_API_BASE || 'http://localhost:8082') + '/api/server-keys'
+            // Hosted pages use their own /api/server-keys until the visitor
+            // connects to a local backend (see isLocalBackendBlocked in js/app.js).
+            serverKeysUrl: (typeof artsEngine !== 'undefined' && artsEngine.isLocalBackendBlocked()
+              ? '' : (window.AE_API_BASE || 'http://localhost:8082')) + '/api/server-keys'
           });
           setAgentsState(true);
         })

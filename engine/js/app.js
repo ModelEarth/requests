@@ -47,6 +47,11 @@ class ArtsEngine {
 
   init() {
     const runCheck = async () => {
+      if (this.isLocalBackendBlocked()) {
+        this._healthRunning = false;
+        this.showLocalBackendOptIn();
+        return;
+      }
       this._healthRunning = true;
       const online = await this.checkBackendStatus();
       if (!online) {
@@ -63,6 +68,8 @@ class ArtsEngine {
         this._pauseHealth();
       }
     };
+
+    this._runHealthCheck = runCheck;
 
     // Wait for config (sets window.AE_API_BASE) before first health check
     (window.AE_CONFIG_PROMISE || Promise.resolve()).then(() => runCheck());
@@ -86,6 +93,36 @@ class ArtsEngine {
     const label = document.getElementById('backendLabel');
     if (dot) dot.className = 'ae-backend-dot';
     if (label) label.textContent = `Click to ping ${this._healthProvider || 'API'}`;
+  }
+
+  // On a hosted page (e.g. cloud.model.earth), the browser asks permission
+  // before a page may reach localhost. So a localhost backend is only
+  // contacted there after the visitor clicks "Connect to my local backend"
+  // (remembered as ae_localBackend). Pages on localhost connect as before.
+  isLocalBackendBlocked() {
+    const isLocal = (host) => ['localhost', '127.0.0.1', '[::1]'].includes(host);
+    if (isLocal(location.hostname)) return false;
+    let backendHost = '';
+    try { backendHost = new URL(this.getApiRoot()).hostname; } catch (_) {}
+    if (!isLocal(backendHost)) return false;
+    try { return this.loadPref('localBackend', '') !== 'on'; } catch (_) { return true; }
+  }
+
+  showLocalBackendOptIn() {
+    const dot = document.getElementById('backendDot');
+    const label = document.getElementById('backendLabel');
+    const startInstruction = document.getElementById('backendStartInstruction');
+    if (dot) dot.className = 'ae-backend-dot offline';
+    if (startInstruction) startInstruction.hidden = true;
+    if (!label) return;
+    label.innerHTML = `The Arts Engine generates through its Rust backend, which runs on your own computer on port ${this.getBackendPort()} (see <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>). <a href="#" id="aeConnectLocalBackend">Connect to my local backend</a> (your browser will ask to allow access to your computer).`;
+    document.getElementById('aeConnectLocalBackend')?.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      try { this.savePref('localBackend', 'on'); } catch (_) {}
+      this._lastActivity = Date.now();
+      this._runHealthCheck?.();
+    });
   }
 
   getApiRoot() {
@@ -1133,6 +1170,10 @@ class ArtsEngine {
   async generate() {
     if (window.AE_API_BASE) this.apiBase = window.AE_API_BASE.replace(/\/$/, '') + '/api';
     if (this.generating) return;
+    if (this.isLocalBackendBlocked()) {
+      this.showLocalBackendOptIn();
+      return;
+    }
     this.generating = true;
     const btn = document.getElementById('generateBtn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="ae-spinner"></span> Generating…'; }
