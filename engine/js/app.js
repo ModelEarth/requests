@@ -47,11 +47,6 @@ class ArtsEngine {
 
   init() {
     const runCheck = async () => {
-      if (this.isLocalBackendBlocked()) {
-        this._healthRunning = false;
-        this.showLocalBackendOptIn();
-        return;
-      }
       this._healthRunning = true;
       const online = await this.checkBackendStatus();
       if (!online) {
@@ -68,8 +63,6 @@ class ArtsEngine {
         this._pauseHealth();
       }
     };
-
-    this._runHealthCheck = runCheck;
 
     // Wait for config (sets window.AE_API_BASE) before first health check
     (window.AE_CONFIG_PROMISE || Promise.resolve()).then(() => runCheck());
@@ -95,34 +88,15 @@ class ArtsEngine {
     if (label) label.textContent = `Click to ping ${this._healthProvider || 'API'}`;
   }
 
-  // On a hosted page (e.g. cloud.model.earth), the browser asks permission
-  // before a page may reach localhost. So a localhost backend is only
-  // contacted there after the visitor clicks "Connect to my local backend"
-  // (remembered as ae_localBackend). Pages on localhost connect as before.
-  isLocalBackendBlocked() {
-    const isLocal = (host) => ['localhost', '127.0.0.1', '[::1]'].includes(host);
-    if (isLocal(location.hostname)) return false;
-    let backendHost = '';
-    try { backendHost = new URL(this.getApiRoot()).hostname; } catch (_) {}
-    if (!isLocal(backendHost)) return false;
-    try { return this.loadPref('localBackend', '') !== 'on'; } catch (_) { return true; }
-  }
-
-  showLocalBackendOptIn() {
-    const dot = document.getElementById('backendDot');
-    const label = document.getElementById('backendLabel');
-    const startInstruction = document.getElementById('backendStartInstruction');
-    if (dot) dot.className = 'ae-backend-dot offline';
-    if (startInstruction) startInstruction.hidden = true;
-    if (!label) return;
-    label.innerHTML = `The Arts Engine generates through its Rust backend, which runs on your own computer on port ${this.getBackendPort()} (see <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>). <a href="#" id="aeConnectLocalBackend">Connect to my local backend</a> (your browser will ask to allow access to your computer).`;
-    document.getElementById('aeConnectLocalBackend')?.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      try { this.savePref('localBackend', 'on'); } catch (_) {}
-      this._lastActivity = Date.now();
-      this._runHealthCheck?.();
-    });
+  // True on hosted pages (e.g. cloud.model.earth), whose engine API is the
+  // site's own (CloudRoot's Worker, engine/worker/engine.js). On localhost
+  // the API is the Rust backend on its own port.
+  usesSiteApi() {
+    try {
+      return new URL(this.getApiRoot()).origin === location.origin;
+    } catch (_) {
+      return false;
+    }
   }
 
   getApiRoot() {
@@ -1170,10 +1144,6 @@ class ArtsEngine {
   async generate() {
     if (window.AE_API_BASE) this.apiBase = window.AE_API_BASE.replace(/\/$/, '') + '/api';
     if (this.generating) return;
-    if (this.isLocalBackendBlocked()) {
-      this.showLocalBackendOptIn();
-      return;
-    }
     this.generating = true;
     const btn = document.getElementById('generateBtn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="ae-spinner"></span> Generating…'; }
@@ -1239,6 +1209,8 @@ class ArtsEngine {
         bar.className = 'ae-panel statusbar error';
         if (msg.includes('unavailable') || msg.includes('503')) {
           bar.innerHTML = 'X.ai API temporarily unavailable — check <a href="https://status.x.ai/" target="_blank" style="color:inherit;text-decoration:underline">status.x.ai</a>';
+        } else if ((msg.toLowerCase().includes('fetch') || msg.includes('network')) && this.usesSiteApi()) {
+          bar.textContent = `The Arts Engine API at ${location.host} is unreachable. Try again shortly.`;
         } else if (msg.toLowerCase().includes('fetch') || msg.includes('network') || msg.includes('refused')) {
           bar.innerHTML = `During development, the Arts Engine only runs on local computers. The Runs backend is unreachable on port ${this.getBackendPort()} at ${this.escapeHtml(this.getApiRoot())}. Use <a href="/team/setup/" style="color:inherit;text-decoration:underline">/team/setup</a> for the start command.`;
         } else {
@@ -1318,7 +1290,8 @@ class ArtsEngine {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 5000));
       const elapsed = Math.round((attempt + 1) * 5);
-      const resp = await fetch(`${this.apiBase}/generate/video/${id}`);
+      // The key matters on the site's own API, which has none of its own.
+      const resp = await fetch(`${this.apiBase}/generate/video/${id}`, { headers: this.buildProviderHeaders() });
       if (!resp.ok) {
         this.setStatus('info', `Video generating… ${elapsed}s elapsed, waiting for xAI (attempt ${attempt + 1}/${maxAttempts})`);
         continue;
@@ -1604,9 +1577,10 @@ class ArtsEngine {
         const data = await resp.json();
         if (dot) dot.className = 'ae-backend-dot online';
         if (startInstruction) startInstruction.hidden = true;
+        const where = this.usesSiteApi() ? `at ${location.host}` : `on port ${this.getBackendPort()}`;
         if (label) label.textContent = data.provider
-          ? `Backend online on port ${this.getBackendPort()} · ${data.provider} ready`
-          : `Backend online on port ${this.getBackendPort()}`;
+          ? `Backend online ${where} · ${data.provider} ready`
+          : `Backend online ${where}`;
         const LABELS = {
           anthropic: 'Anthropic', google: 'Google', openai: 'OpenAI', xai: 'xAI', groq: 'Groq',
         };
@@ -1618,8 +1592,9 @@ class ArtsEngine {
         this._envAvailableProviders = new Set(
           Array.isArray(data.available_providers) ? data.available_providers : (data.provider ? [data.provider] : [])
         );
-        // If no browser keys are set, select the env provider that matches the backend
-        if (this._configuredProviders.size === 0) {
+        // If no browser keys are set, select the env provider that matches the
+        // backend. The site's own API has none: it uses the visitor's keys.
+        if (this._configuredProviders.size === 0 && this._envAvailableProviders.size > 0) {
           if (this.prefs.provider !== 'env') {
             this.prefs.provider = 'env';
             this.savePref('provider', 'env');
@@ -1631,6 +1606,11 @@ class ArtsEngine {
       }
     } catch { /* offline */ }
     if (dot) dot.className = 'ae-backend-dot offline';
+    if (this.usesSiteApi()) {
+      if (startInstruction) startInstruction.hidden = true;
+      if (label) label.textContent = `The Arts Engine API at ${location.host} isn't responding. Retrying…`;
+      return false;
+    }
     if (startInstruction) startInstruction.hidden = false;
     if (label) label.innerHTML = `The Arts Engine only runs on local computers during our development phase. Turn on the Arts Engine Rust backend locally on port ${this.getBackendPort()} using the steps in the <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>`;
     // If saved provider has no browser key, fall back to env

@@ -70,8 +70,18 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
   const subtitleEl = document.getElementById('ae-subtitle');
   if (subtitleEl) subtitleEl.textContent = subtitle;
 
-  // Make api_base available to app.js via global
-  if (cfg.api_base) window.AE_API_BASE = cfg.api_base;
+  // Make api_base available to app.js via global. api_base is the Rust
+  // backend on localhost; hosted pages (e.g. cloud.model.earth) use the
+  // site's own API instead (engine/worker/engine.js in CloudRoot's Worker),
+  // so they never ask to reach the visitor's computer.
+  const isLocalHost = (host) => ['localhost', '127.0.0.1', '[::1]'].includes(host);
+  let apiBase = cfg.api_base;
+  try {
+    if (apiBase && !isLocalHost(location.hostname) && isLocalHost(new URL(apiBase).hostname)) {
+      apiBase = location.origin;
+    }
+  } catch (_) {}
+  if (apiBase) window.AE_API_BASE = apiBase;
 })();
 </script>
 
@@ -714,10 +724,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function() {
           KeyManager.migrateFromLegacy();
           KeyManager.init(agentsContainer, {
-            // Hosted pages use their own /api/server-keys until the visitor
-            // connects to a local backend (see isLocalBackendBlocked in js/app.js).
-            serverKeysUrl: (typeof artsEngine !== 'undefined' && artsEngine.isLocalBackendBlocked()
-              ? '' : (window.AE_API_BASE || 'http://localhost:8082')) + '/api/server-keys'
+            serverKeysUrl: (window.AE_API_BASE || 'http://localhost:8082') + '/api/server-keys'
           });
           setAgentsState(true);
         })
