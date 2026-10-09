@@ -1,6 +1,199 @@
-/* Arts Engine — Custom Styles
+/* Project Engine — Custom Styles
    Supplements localsite/css/base.css
    Uses CSS variables for dark mode compatibility */
+
+/* =========================================================
+   Title row — engine mode menu (Project, Arts, Activities, Design) at far right
+   ========================================================= */
+
+.ae-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 6px;
+}
+
+#ae-title .ae-title-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  fill: #4a90e2;
+}
+
+.ae-title-menus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-left: auto;
+}
+
+.ae-mode-wrap {
+  position: relative;
+}
+
+.ae-mode-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.ae-mode-trigger:hover {
+  background: #f1f5f9;
+}
+
+.ae-mode-trigger .material-icons {
+  font-size: 20px;
+  color: #64748b;
+}
+
+.ae-mode-menu {
+  position: absolute;
+  z-index: 100;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 170px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.ae-mode-menu[hidden] {
+  display: none;
+}
+
+.ae-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 10px;
+  border-radius: 10px;
+}
+
+.ae-mode-option + .ae-mode-option {
+  margin-top: 3px;
+}
+
+.ae-mode-option:hover {
+  background: #f1f5f9;
+}
+
+.ae-mode-option.active {
+  background: #e8f1fc;
+}
+
+.ae-mode-pick {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ae-mode-pick .material-icons {
+  font-size: 18px;
+  color: #64748b;
+}
+
+.ae-mode-option.active .ae-mode-pick {
+  font-weight: 600;
+}
+
+.ae-mode-option.active .material-icons {
+  color: #4a90e2;
+}
+
+.ae-mode-check {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #4a90e2;
+  cursor: pointer;
+}
+
+/* Selected team source links, in the Team Sources panel above Model */
+.ae-team-source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: #888;
+}
+
+.ae-team-source:not([hidden]) ~ .ae-team-source {
+  margin-top: 8px;
+}
+
+#teamSourcesPanel[hidden] {
+  display: none;
+}
+
+.ae-team-source[hidden] {
+  display: none;
+}
+
+.ae-team-source .material-icons {
+  font-size: 18px;
+  color: #4a90e2;
+}
+
+.dark .ae-team-source .material-icons {
+  color: #6aa8ec;
+}
+
+.dark .ae-mode-trigger,
+.dark .ae-mode-menu {
+  background: #2a2a2a;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+.dark .ae-mode-menu {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dark .ae-mode-trigger:hover,
+.dark .ae-mode-option:hover {
+  background: #363636;
+}
+
+.dark .ae-mode-pick {
+  color: #e5e7eb;
+}
+
+.dark .ae-mode-trigger .material-icons,
+.dark .ae-mode-pick .material-icons {
+  color: #9ca3af;
+}
+
+.dark .ae-mode-option.active {
+  background: rgba(74, 144, 226, 0.2);
+}
+
+.dark .ae-mode-option.active .material-icons {
+  color: #6aa8ec;
+}
 
 /* =========================================================
    Model trigger — mirrors chat/prompt sp-model-* pattern
@@ -62,6 +255,24 @@
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: #fff !important;
   box-shadow: 0 2px 10px rgba(29, 78, 216, 0.38);
+}
+
+/* Open state — plain button while the key manager is showing */
+#toggleAgentsEditor.btn-nice.active {
+  background: #fff;
+  color: #0f172a !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+#toggleAgentsEditor.btn-nice.active:hover {
+  background: #f1f5f9;
+}
+.dark #toggleAgentsEditor.btn-nice.active {
+  background: #2a2a2a;
+  color: #e5e7eb !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.dark #toggleAgentsEditor.btn-nice.active:hover {
+  background: #363636;
 }
 
 .sp-model-menu {
@@ -137,6 +348,37 @@
   font-size: 0.71rem;
   line-height: 1.3;
   min-height: 1em;
+}
+
+.dark .sp-model-trigger,
+.dark .sp-model-menu {
+  background: #2a2a2a;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+.dark .sp-model-menu {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.dark .sp-model-trigger:hover,
+.dark .sp-model-option:hover {
+  background: #363636;
+}
+
+.dark .sp-model-name,
+.dark .sp-model-option {
+  color: #e5e7eb;
+}
+
+.dark .sp-model-provider,
+.dark .sp-model-provider-header,
+.dark .sp-model-option-meta {
+  color: #9ca3af;
+}
+
+.dark .sp-model-provider-group + .sp-model-provider-group {
+  border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 .issues-header {
@@ -440,6 +682,76 @@
 .dark .ae-ratio-btn.active {
   border-color: #6aacf5;
   background: rgba(106, 172, 245, 0.1);
+}
+
+/* Example line with compact aspect ratio icons to its right */
+.ae-example-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
+}
+
+.ae-ratio-mini-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.ae-ratio-btn.ae-ratio-mini {
+  flex-direction: row;
+  justify-content: center;
+  gap: 0;
+  width: 28px;
+  height: 26px;
+  min-width: 0;
+  padding: 0;
+  border-width: 1px;
+  border-radius: 6px;
+}
+
+.ae-ratio-mini-group.expanded .ae-ratio-mini {
+  display: none;
+}
+
+.ae-ratio-mini .ratio-box {
+  display: block;
+  border-radius: 2px;
+}
+
+.ae-ratio-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+}
+
+.ae-ratio-expand:hover {
+  background: rgba(74, 144, 226, 0.1);
+  color: #4a90e2;
+}
+
+.ae-ratio-expand .material-icons {
+  font-size: 1.1rem;
+}
+
+.dark .ae-ratio-expand {
+  color: #aaa;
+}
+
+.dark .ae-ratio-expand:hover {
+  background: rgba(106, 172, 245, 0.1);
+  color: #6aacf5;
 }
 
 /* Visual ratio indicator box */
@@ -1286,4 +1598,167 @@
     min-width: 52px;
     padding: 8px;
   }
+}
+
+/* Projects panel — project list moved in from the GitHub widget (app.js moveProjectsToPanel) */
+.ae-panel h3.ae-projects-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0; /* No gap below the title while the list is hidden */
+}
+
+/* View / Hide Projects button at the far right of the title */
+#projectsPanelActions #toggleProjectsSection {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+#projectsPanelList #projectsSectionsContainer {
+  margin-top: 14px;
+}
+
+/* No fullscreen toggle for the GitHub widget on the engine page */
+#issues-root .header-fullscreen-btn,
+#issues-root .fullscreen-btn,
+#projectsPanelList .fullscreen-btn {
+  display: none;
+}
+
+/* Blue action button — "Choose Resource Areas", also the key manager's "Paste Keys" */
+.ae-action-btn,
+#agentsContainer .key-paste-btn {
+  padding: 8px 12px;
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#agentsContainer .key-paste-btn {
+  display: inline-flex;
+  width: auto;
+}
+
+/* Dark mode for <github-repo-modal> and <resource-area-selector> (chat/packages/github-components).
+   Their Tailwind theme resolves --color-* on :root, but localsite puts .dark on <body>,
+   so the tokens are re-declared and re-mapped here to take effect (popups included). */
+.dark {
+  --background: #2a2a2a;
+  --foreground: #e5e7eb;
+  --card: #2a2a2a;
+  --card-foreground: #e5e7eb;
+  --popover: #2a2a2a;
+  --popover-foreground: #e5e7eb;
+  --primary: #e5e7eb;
+  --primary-foreground: #1f1f1f;
+  --secondary: #363636;
+  --secondary-foreground: #e5e7eb;
+  --muted: #363636;
+  --muted-foreground: #9ca3af;
+  --accent: #363636;
+  --accent-foreground: #e5e7eb;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.18);
+  --ring: #6aa8ec;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+.dark github-repo-modal {
+  color: var(--foreground);
+}
+
+/* Upper right of the title row: #upperRightIcons (map print/download icons) + #localView */
+.ae-upper-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+#upperRightIcons {
+  display: flex;
+  align-items: center;
+}
+
+/* Matches .print-download-icon from team/js/print-download.js */
+#localView {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  margin: 0 5px;
+  padding: 6px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #999;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+#localView:hover {
+  background: #e5e5e5;
+  color: #666;
+}
+#localView .material-icons {
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
+}
+.dark #localView {
+  background: #3a3a3a;
+  border-color: #555;
+  color: #888;
+}
+.dark #localView:hover {
+  background: #4a4a4a;
+  color: #aaa;
+}
+
+/* #localView on — beats localsite's ".local{display:inline-block !important}" on localhost */
+body.hideLocalView .local,
+body.hideLocalView .localonly {
+  display: none !important;
+}
+
+/* Map moved above My Content by team/js/map.js */
+#mapCatch #pageMap {
+  margin-bottom: 20px;
+}
+
+/* Hide the map while a location's detail is shown (class set in index.html) */
+body.ae-location-detail #pageMap {
+  display: none !important;
+}
+
+/* Map's right column is hidden by team/js/map.js after #pageMap moves to #mapCatch — listings fill the panel */
+#listwidget #widgetDetailsParent {
+  flex: 1 1 auto;
 }

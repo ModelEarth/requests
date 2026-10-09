@@ -1,5 +1,6 @@
 /**
- * Arts Engine — X.ai Image & Text Generation
+ * Project Engine — X.ai Image & Text Generation
+ * Modes (Project, Arts, Activities, Design) are set by the #mode= hash param in index.html (comma separated).
  * Frontend JavaScript — template reference copy.
  *
  * Agents: copy this file to your subfolder as js/app.js and customize.
@@ -36,6 +37,7 @@ class ArtsEngine {
       model:      this.loadPref('model', 'gemini-2.5-flash'),
       variations: parseInt(this.loadPref('variations', '1')),
       maxTokens:  parseInt(this.loadPref('maxTokens', '1024')),
+      ratioExpanded: false,  // small aspect ratio icons show on each page load
     };
 
     this.init();
@@ -103,6 +105,19 @@ class ArtsEngine {
     return this.apiBase.replace(/\/api$/, '');
   }
 
+  // Title of the selected engine modes, e.g. "Project Engine" or "Project & Arts Engine"
+  getEngineTitle() {
+    if (window.AE_MODES && typeof getEngineTitle === 'function') return getEngineTitle();
+    return 'Project Engine';
+  }
+
+  // Node label in the flow panel for the primary mode: Project, Scene or Activity
+  getNodeLabel() {
+    const modes = window.AE_MODES;
+    if (modes && typeof getEngineMode === 'function') return modes[getEngineMode()].node || 'Scene';
+    return 'Project';
+  }
+
   getBackendPort() {
     try {
       return new URL(this.getApiRoot()).port || '8082';
@@ -133,6 +148,10 @@ class ArtsEngine {
       this._storyboardPersistenceReady = true;
       this.renderPromptList();
       this.renderStoryboard();
+      // Re-render node labels (Scene, Project, Activity) when the mode changes
+      document.addEventListener('hashChangeEvent', () => {
+        if (this._nodeLabel !== this.getNodeLabel()) this.renderStoryboard();
+      });
       if (restored && this.selectedSceneIdx !== null && this.scenes[this.selectedSceneIdx - 1]) {
         this.selectScene(this.selectedSceneIdx - 1);
       } else if (!restored) {
@@ -275,12 +294,22 @@ class ArtsEngine {
     // Aspect ratio buttons
     document.querySelectorAll('.ae-ratio-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.ae-ratio-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        // Compact and large sets share data-ratio, so both stay in sync
+        document.querySelectorAll('.ae-ratio-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.ratio === btn.dataset.ratio));
         this.prefs.ratio = btn.dataset.ratio;
         this.savePref('ratio', this.prefs.ratio);
       });
     });
+
+    // Expand the compact aspect ratio icons to the larger labeled set
+    const ratioExpand = document.getElementById('aspectRatioExpand');
+    if (ratioExpand) {
+      ratioExpand.addEventListener('click', () => {
+        this.prefs.ratioExpanded = !this.prefs.ratioExpanded;
+        this.updateAspectRatioVisibility();
+      });
+    }
 
     // Output type buttons (skip disabled)
     const updateOutputTypeUI = (type) => {
@@ -305,6 +334,7 @@ class ArtsEngine {
 
       const maxTokensRow = document.getElementById('maxTokensRow');
       if (maxTokensRow) maxTokensRow.style.display = type === 'text' ? '' : 'none';
+      this.updateAspectRatioVisibility();
     };
 
     document.querySelectorAll('.ae-type-btn').forEach(btn => {
@@ -578,9 +608,17 @@ class ArtsEngine {
       }
     }
 
-    // Scroll to node in storyboard
+    // Scroll the storyboard row sideways to the node. Avoids scrollIntoView, which also
+    // scrolled the page down to this panel on load when a saved scene was restored.
     const node = document.querySelector(`.ae-node-card[data-idx="${idx}"]`);
-    if (node) node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const row = document.getElementById('storyboardContainer');
+    if (node && row) {
+      const nodeBox = node.getBoundingClientRect();
+      const rowBox = row.getBoundingClientRect();
+      if (nodeBox.left < rowBox.left || nodeBox.right > rowBox.right) {
+        row.scrollTo({ left: row.scrollLeft + nodeBox.left - rowBox.left - 12, behavior: 'smooth' });
+      }
+    }
     this.scheduleStoryboardSave();
   }
   
@@ -818,10 +856,11 @@ class ArtsEngine {
       return;
     }
 
+    const nodeLabel = this._nodeLabel = this.getNodeLabel();
     const nodes = this.scenes.map((scene, idx) => {
       const hasImage = !!scene.image;
       const thumbHtml = hasImage
-        ? `<img class="ae-node-thumb" src="${this.escapeHtml(scene.image)}" alt="Scene ${idx+1}" loading="lazy">`
+        ? `<img class="ae-node-thumb" src="${this.escapeHtml(scene.image)}" alt="${nodeLabel} ${idx+1}" loading="lazy">`
         : `<div class="ae-node-thumb" style="display:flex;align-items:center;justify-content:center;">
              <span class="material-icons" style="opacity:0.3;font-size:1.8rem">image</span>
            </div>`;
@@ -845,7 +884,7 @@ class ArtsEngine {
         return `
         <div class="ae-scene-node">
           <div class="ae-node-card${active}" data-idx="${idx}" onclick="artsEngine.selectScene(${idx})">
-            <div class="ae-node-num">Scene ${scene.scene || idx + 1}
+            <div class="ae-node-num">${nodeLabel} ${scene.scene || idx + 1}
               <span class="ae-node-actions">
                 <button class="ae-node-action ae-edit-btn" title="Edit scene"
                   onclick="event.stopPropagation();artsEngine.editScene(${idx})">
@@ -937,7 +976,10 @@ class ArtsEngine {
       const hasBrowserKeys = this._configuredProviders.size > 0;
       const hasEnvKeys     = !!(this._envAvailableProviders?.size || this._healthProvider);
       if (!hasBrowserKeys && !hasEnvKeys) {
-        document.getElementById('toggleAgentsEditor')?.click();
+        const keysPanel = document.getElementById('agentsContainer');
+        if (!keysPanel || getComputedStyle(keysPanel).display === 'none') {
+          document.getElementById('toggleAgentsEditor')?.click();
+        }
         return;
       }
       this._modelMenuOpen = !this._modelMenuOpen;
@@ -1121,6 +1163,33 @@ class ArtsEngine {
 
     if (label) label.textContent = btnLabels[this.prefs.outputType] || 'Generate';
     if (input) input.placeholder = `Enter a prompt for your ${typeLabels[this.prefs.outputType] || 'content'}… (Ctrl+Enter to generate)`;
+    this.updateAspectRatioVisibility();
+  }
+
+  // Aspect Ratio applies only to image and video output.
+  // Compact icons sit beside the example; the expand button reveals the larger set.
+  updateAspectRatioVisibility() {
+    const type = this.prefs.outputType;
+    const show = type === 'image' || type === 'video';
+    const expanded = !!this.prefs.ratioExpanded;
+
+    // The small icons hide while the large set is open; the toggle stays visible
+    const mini = document.getElementById('aspectRatioMini');
+    if (mini) {
+      mini.style.display = show ? '' : 'none';
+      mini.classList.toggle('expanded', expanded);
+    }
+
+    const row = document.getElementById('aspectRatioRow');
+    if (row) row.style.display = show && expanded ? '' : 'none';
+
+    const expandBtn = document.getElementById('aspectRatioExpand');
+    if (expandBtn) {
+      expandBtn.setAttribute('aria-expanded', String(expanded));
+      expandBtn.title = expanded ? 'Hide larger aspect ratio icons' : 'Show larger aspect ratio icons';
+      const icon = expandBtn.querySelector('.material-icons');
+      if (icon) icon.textContent = expanded ? 'expand_less' : 'expand_more';
+    }
   }
 
 
@@ -1212,7 +1281,7 @@ class ArtsEngine {
         } else if ((msg.toLowerCase().includes('fetch') || msg.includes('network')) && this.usesSiteApi()) {
           bar.textContent = `The Arts Engine API at ${location.host} is unreachable. Try again shortly.`;
         } else if (msg.toLowerCase().includes('fetch') || msg.includes('network') || msg.includes('refused')) {
-          bar.innerHTML = `During development, the Arts Engine only runs on local computers. The Runs backend is unreachable on port ${this.getBackendPort()} at ${this.escapeHtml(this.getApiRoot())}. Use <a href="/team/setup/" style="color:inherit;text-decoration:underline">/team/setup</a> for the start command.`;
+          bar.innerHTML = `During development, the ${this.getEngineTitle()} only runs on local computers. The Runs backend is unreachable on port ${this.getBackendPort()} at ${this.escapeHtml(this.getApiRoot())}. Use <a href="/team/setup/" style="color:inherit;text-decoration:underline">/team/setup</a> for the start command.`;
         } else {
           bar.textContent = 'Error: ' + msg;
         }
@@ -1612,7 +1681,10 @@ class ArtsEngine {
       return false;
     }
     if (startInstruction) startInstruction.hidden = false;
-    if (label) label.innerHTML = `The Arts Engine only runs on local computers during our development phase. Turn on the Arts Engine Rust backend locally on port ${this.getBackendPort()} using the steps in the <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>`;
+    if (label) label.textContent = `Backend offline on port ${this.getBackendPort()}.`;
+    // Full explanation sits under the "more" toggle, above the "start art" instruction
+    const offlineNote = document.getElementById('backendOfflineNote');
+    if (offlineNote) offlineNote.innerHTML = `<br>The ${this.getEngineTitle()} only runs on local computers during our development phase. Turn on the Engine Rust backend locally on port ${this.getBackendPort()} using the steps in the <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>`;
     // If saved provider has no browser key, fall back to env
     const savedProv = this.loadPref('provider', 'google');
     if (!this._configuredProviders.has(savedProv) && savedProv !== 'env') {
@@ -1636,10 +1708,41 @@ class ArtsEngine {
         githubOwner: 'modelearth',
         defaultRepo: 'requests',
         showProject: false,
+        showTokenSource: true,
       });
     } catch (e) {
       console.warn('GitHubIssuesManager init failed:', e);
     }
+    this.renderGitHubDestination();
+    this.moveProjectsToPanel();
+  }
+
+  // Move the widget's View Projects button and project list into the Projects panel.
+  // issues.js finds both by id, so its show/hide logic still applies after the move.
+  moveProjectsToPanel() {
+    if (typeof waitForElm !== 'function') return;
+    waitForElm('#toggleProjectsSection').then(btn => {
+      document.getElementById('projectsPanelActions')?.appendChild(btn);
+    });
+    waitForElm('#projectsSectionsContainer').then(list => {
+      document.getElementById('projectsPanelList')?.appendChild(list);
+    });
+  }
+
+  // Repo and folder that Save to GitHub sends to. The repo is remembered; the folder is dated.
+  getGitHubDestination() {
+    return {
+      repo: this.loadPref('githubRepo', 'modelearth/requests'),
+      folder: 'generated/' + new Date().toISOString().slice(0, 10),
+    };
+  }
+
+  renderGitHubDestination() {
+    const el = document.getElementById('githubOutputDest');
+    if (!el) return;
+    const { repo, folder } = this.getGitHubDestination();
+    const url = `https://github.com/${repo}/tree/main/${folder}`;
+    el.innerHTML = `Output folder: <a href="${this.escapeHtml(url)}" target="_blank" rel="noopener">${this.escapeHtml(repo)}/${this.escapeHtml(folder)}</a>`;
   }
 
   // -------------------------------------------------------------------------
@@ -1650,9 +1753,12 @@ class ArtsEngine {
     const token = localStorage.getItem('github_token');
     if (!token) { alert('Enter your GitHub token in the GitHub widget on the right to save results.'); return; }
     if (!this.results.length) { alert('No results yet — generate some images first.'); return; }
-    const repo   = prompt('GitHub repo (e.g. your-org/your-repo):', 'modelearth/requests');
-    const folder = prompt('Folder path in repo:', 'generated/' + new Date().toISOString().slice(0, 10));
+    const dest   = this.getGitHubDestination();
+    const repo   = prompt('GitHub repo (e.g. your-org/your-repo):', dest.repo);
+    const folder = prompt('Folder path in repo:', dest.folder);
     if (!repo || !folder) return;
+    this.savePref('githubRepo', repo);
+    this.renderGitHubDestination();
     this.setStatus('info', 'Saving to GitHub…');
     let saved = 0; const errors = [];
     for (const item of this.results) {
@@ -1664,7 +1770,7 @@ class ArtsEngine {
         const r = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}/${filename}`, {
           method: 'PUT',
           headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'Arts Engine: add generated image', content: b64 }),
+          body: JSON.stringify({ message: `${this.getEngineTitle()}: add generated image`, content: b64 }),
         });
         if (r.ok) saved++; else { const e = await r.json(); errors.push(e.message || 'Error'); }
       } catch (e) { errors.push(e.message); }

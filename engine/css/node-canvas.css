@@ -27,12 +27,25 @@
 .nc-panel-toggle .material-icons { font-size: 0.95rem; }
 .nc-panel-collapsed .nc-panel-heading { margin-bottom: 0; }
 .nc-panel-collapsed .nc-panel-content { display: none; }
+.nc-panel-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nc-panel-toggle.active { background: #e8f1fc; }
+.nc-panel-about {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+  color: #888;
+}
+.nc-panel-collapsed .nc-panel-about { margin: 12px 0 0 0; }
 .dark .nc-panel-toggle {
   border-color: rgba(255,255,255,0.2);
   background: #2a2a2a;
   color: #8fc2ff;
 }
 .dark .nc-panel-toggle:hover { background: #343a44; }
+.dark .nc-panel-toggle.active { background: rgba(74,144,226,0.2); }
 
 .nc-model-links {
   display: flex;
@@ -302,3 +315,56 @@
 .nc-port.nc-filled[data-ptype="image"] { background: #e2914a; }
 .nc-port-out { right: -9px; top: 50%; transform: translateY(-50%); }
 .nc-port-in  { left: -19px; top: 50%; transform: translateY(-50%); }
+
+/* ---- Dark mode --------------------------------------------------------- */
+.dark .nc-panel-about { color: #9ca3af; }
+
+.dark .nc-toolbar .nc-btn {
+  border-color: rgba(255,255,255,0.2);
+  background: #2a2a2a;
+  color: #e5e7eb;
+}
+.dark .nc-toolbar .nc-btn:hover { background: #363636; }
+.dark .nc-toolbar .nc-hint { color: #8b949e; }
+
+.dark .nc-viewport {
+  border-color: rgba(255,255,255,0.12);
+  background-color: #1b1d21;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px);
+}
+
+.dark .nc-node {
+  background: #2a2a2a;
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  color: #e5e7eb;
+}
+.dark .nc-node.nc-selected { box-shadow: 0 4px 22px rgba(74,144,226,0.55); }
+
+.dark .nc-node-body textarea,
+.dark .nc-ratio,
+.dark .nc-model,
+.dark .nc-output-type {
+  background: #1f1f1f;
+  border-color: rgba(255,255,255,0.18);
+  color: #e5e7eb;
+}
+
+.dark .nc-inrow { color: #aab4c3; }
+.dark .nc-input-slot { border-color: rgba(255,255,255,0.25); color: #8b949e; }
+.dark .nc-ratio-label,
+.dark .nc-out-kind { color: #9ca3af; }
+
+.dark .nc-next-btn { background: rgba(74,144,226,0.2); color: #8fc2ff; }
+.dark .nc-next-btn:hover { background: rgba(74,144,226,0.3); }
+
+.dark .nc-output { background: #1f1f1f; }
+.dark .nc-output-text { background: #1f1f1f; color: #e5e7eb; }
+.dark .nc-output-empty { color: #6b7280; }
+
+.dark .nc-model-output { background-color: #1f2329; }
+.dark .nc-model-output model-viewer { --poster-color: #1f2329; }
+.dark .nc-model-status { color: #9ca3af; }
+.dark .nc-model-status.error { color: #f97066; }
+
+.dark .nc-port { background: #2a2a2a; }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<title>Arts Engine — Storyboard Generator</title>
+<title>Project Engine — Storyboard Generator</title>
 <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -25,7 +25,8 @@ param.showsearch = "false";
 
 <!--
   Config loader — reads template/config.yaml (or local config.yaml override).
-  Populates #ae-title, #ae-subtitle, and window.AE_API_BASE before app.js runs.
+  Defines window.AE_MODES (Projects, Arts, Activities, Design). label = menu, name = title for #ae-title and #ae-subtitle,
+  and sets window.AE_API_BASE before app.js runs.
   Inline fallback text in the HTML elements renders instantly if fetch is slow.
 -->
 <script>
@@ -54,21 +55,28 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
     } catch (_) {}
   }
 
-  // Storyboard builder
-  const title    = cfg.title    || 'Arts Engine';
-  const subtitle = cfg.subtitle || 'Video, image & text generation via xAI, Claude, Gemini, OpenAI APIs';
-  const icon     = cfg.icon     || 'auto_awesome';
+  // Engine modes — selected with the #mode= hash param (Project, key "work", is the default).
+  // config.yaml title/subtitle/icon override the Project mode defaults.
+  const sources = 'via xAI, Claude, Gemini, OpenAI APIs';
+  window.AE_MODES = {
+    work:   { label: 'Projects', name: 'Project', title: cfg.title || 'Project Engine', icon: cfg.icon || 'tips_and_updates', flow: 'Workflow',        node: 'Project',
+              subtitle: cfg.subtitle || `Text, image &amp; video generation for projects ${sources}` },
+    art:    { label: 'Arts',   name: 'Arts',     title: 'Arts Engine',   icon: 'auto_awesome',    flow: 'Storyboard Flow', node: 'Scene',
+              subtitle: `Video, image &amp; text generation ${sources}` },
+    play:   { label: 'Activities', name: 'Activity', title: 'Activity Engine',   icon: 'directions_run',  flow: 'Activities',      node: 'Activity',
+              subtitle: `Games, stories &amp; interactive media ${sources}` },
+    design: { label: 'Design', name: 'Design',   title: 'Design Engine', icon: 'design_services', flow: 'Project Flow',    node: 'Project',
+              subtitle: `Layouts, graphics &amp; visual concepts ${sources}` }
+  };
+  // Solid (filled) versions of icons — the localsite icon font only has outlined glyphs.
+  window.AE_SOLID_ICONS = {
+    forum: 'M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z'
+  };
 
-  document.title = title + ' — Storyboard Generator';
-
-  const titleEl = document.getElementById('ae-title');
-  if (titleEl) {
-    titleEl.innerHTML =
-      `<span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">${icon}</span>${title}`;
-  }
-
-  const subtitleEl = document.getElementById('ae-subtitle');
-  if (subtitleEl) subtitleEl.textContent = subtitle;
+  waitForElm('#aeModeMenu').then(setupEngineModeMenu);
+  waitForElm('#aeTeamMenu').then(setupTeamMenu);
+  document.addEventListener('hashChangeEvent', applyEngineMode, false);
+  document.addEventListener('hashChangeEvent', applyTeamSource, false);
 
   // Make api_base available to app.js via global. api_base is the Rust
   // backend on localhost; hosted pages (e.g. cloud.model.earth) use the
@@ -83,6 +91,260 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
   } catch (_) {}
   if (apiBase) window.AE_API_BASE = apiBase;
 })();
+
+// Selected modes from the #mode= hash param, comma separated (e.g. #mode=work,art).
+// Returned in menu order. Defaults to Project (key "work").
+function getEngineModes() {
+  const modes = window.AE_MODES || {};
+  const picked = String(getHash().mode || '').toLowerCase().split(',').map(m => m.trim());
+  const list = Object.keys(modes).filter(key => picked.includes(key));
+  return list.length ? list : ['work'];
+}
+
+// Primary (first) selected mode
+function getEngineMode() {
+  return getEngineModes()[0];
+}
+
+// Combined title from each mode's name (singular), e.g. "Project Engine", "Project & Arts Engine", "Project, Arts & Activity Engine"
+function getEngineTitle() {
+  const modes = getEngineModes();
+  if (modes.length === 1) return window.AE_MODES[modes[0]].title;
+  const names = modes.map(key => window.AE_MODES[key].name);
+  return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] + ' Engine';
+}
+
+// Write the selected modes to the hash. Project (work) alone is the default, so it clears the param.
+function setEngineModes(list) {
+  if (!list.length || (list.length === 1 && list[0] === 'work')) {
+    goHash({}, 'mode');
+  } else {
+    goHash({ mode: list.join(',') });
+  }
+}
+
+// Update title, subtitle and menu state from the #mode= hash param
+// Title icon: solid SVG when available, otherwise the icon font.
+function getEngineIconHTML(icon) {
+  const path = (window.AE_SOLID_ICONS || {})[icon];
+  if (path) {
+    return `<svg class="ae-title-icon" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="${path}"/></svg>`;
+  }
+  return `<span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">${icon}</span>`;
+}
+function applyEngineMode() {
+  if (!window.AE_MODES) return;
+  const modes = getEngineModes();
+  const m = window.AE_MODES[modes[0]];
+  const title = getEngineTitle();
+  document.title = title + ' — Storyboard Generator';
+  document.body.dataset.engineMode = modes.join(' '); // CSS: [data-engine-mode~="art"]
+
+  const titleEl = document.getElementById('ae-title');
+  if (titleEl) {
+    titleEl.innerHTML = getEngineIconHTML(m.icon) + title;
+  }
+  const subtitleEl = document.getElementById('ae-subtitle');
+  if (subtitleEl) subtitleEl.innerHTML = m.subtitle;
+
+  // Flow panel title follows the primary mode
+  document.querySelectorAll('.ae-flow-title').forEach(el => { el.textContent = m.flow; });
+
+  // Arts-only elements: #artIntro, #promptPanel (includes Aspect Ratio)
+  document.querySelectorAll('.ae-arts-only').forEach(el => {
+    el.style.display = modes.includes('art') ? '' : 'none';
+  });
+
+  document.querySelectorAll('#aeModeMenu .ae-mode-option').forEach(row => {
+    const active = modes.includes(row.dataset.mode);
+    row.classList.toggle('active', active);
+    const box = row.querySelector('.ae-mode-check');
+    if (box) box.checked = active;
+  });
+}
+
+// Menu to the right of the title: Projects, Arts, Activities, Design.
+// Clicking a name selects only that mode. Its checkbox adds or removes it, so several can be combined.
+function setupEngineModeMenu() {
+  const trigger = document.getElementById('aeModeTrigger');
+  const menu = document.getElementById('aeModeMenu');
+  if (!trigger || !menu || menu.dataset.ready) return;
+  menu.dataset.ready = 'true';
+
+  menu.innerHTML = Object.entries(window.AE_MODES).map(([key, m]) =>
+    `<div class="ae-mode-option" data-mode="${key}">
+      <button type="button" class="ae-mode-pick" role="menuitem" title="Only ${m.label}">
+        <span class="material-icons">${m.icon}</span>${m.label}
+      </button>
+      <input type="checkbox" class="ae-mode-check" role="menuitemcheckbox" aria-label="Include ${m.label}" title="Include ${m.label}">
+    </div>`).join('');
+
+  const close = initHeaderMenu('aeModeWrap');
+  menu.addEventListener('click', (e) => {
+    const pick = e.target.closest('.ae-mode-pick');
+    if (!pick) return;
+    close();
+    setEngineModes([pick.closest('.ae-mode-option').dataset.mode]);
+  });
+  // Checkboxes keep the menu open while combining modes
+  menu.addEventListener('change', (e) => {
+    const box = e.target.closest('.ae-mode-check');
+    if (!box) return;
+    const checked = [...menu.querySelectorAll('.ae-mode-option')]
+      .filter(row => row.querySelector('.ae-mode-check').checked)
+      .map(row => row.dataset.mode);
+    setEngineModes(checked);
+    applyEngineMode(); // Re-checks Project when the last box is cleared
+  });
+  applyEngineMode();
+}
+
+// Reveal or fold the "start art" instruction under the backend status
+function toggleBackendStartDetail() {
+  const detail = document.getElementById('backendStartDetail');
+  const link = document.getElementById('backendStartMore');
+  detail.hidden = !detail.hidden;
+  link.textContent = detail.hidden ? 'more' : 'less';
+}
+
+// While a listing's detail is shown (#id= or #detail=): title becomes "Location" and #pageMap hides
+function applyLocationDetail() {
+  const hash = getHash();
+  const showingDetail = !!(hash.id || hash.detail);
+  const wasShowing = document.body.classList.contains('ae-location-detail');
+  document.body.classList.toggle('ae-location-detail', showingDetail);
+  onElmReady('#locationsTitle', (title) => {
+    title.textContent = showingDetail ? 'Location' : 'Locations';
+  });
+  // Leaflet needs a size refresh after its container is revealed
+  if (wasShowing && !showingDetail && window.leafletMap && window.leafletMap.map) {
+    window.leafletMap.map.invalidateSize();
+  }
+}
+document.addEventListener('hashChangeEvent', applyLocationDetail, false);
+document.addEventListener('DOMContentLoaded', applyLocationDetail);
+
+// #localView — hide .local and .localonly elements (overrides localsite's localhost !important rule)
+function applyLocalView(hidden) {
+  document.body.classList.toggle('hideLocalView', hidden);
+  const btn = document.getElementById('localView');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', String(hidden));
+  btn.title = hidden ? 'Show local-only items' : 'Hide local-only items';
+  btn.querySelector('.material-icons').textContent = hidden ? 'visibility_off' : 'visibility';
+}
+onElmReady('#localView', (btn) => {
+  // Only useful where localsite reveals .local elements: localhost or ?view=local
+  const localShown = location.host.indexOf('localhost') >= 0 || (window.param && param.view == 'local');
+  if (!localShown) return;
+  btn.style.display = '';
+  let hidden = false;
+  try { hidden = localStorage.getItem('ae_hideLocalView') === '1'; } catch (e) {}
+  applyLocalView(hidden);
+  btn.addEventListener('click', () => {
+    hidden = !document.body.classList.contains('hideLocalView');
+    try { localStorage.setItem('ae_hideLocalView', hidden ? '1' : '0'); } catch (e) {}
+    applyLocalView(hidden);
+  });
+});
+
+// Reveal or hide the Orchestration panel intro
+function toggleOrchestrationAbout() {
+  const about = document.getElementById('nodeCanvasAbout');
+  const btn = document.getElementById('nodeCanvasAboutToggle');
+  about.hidden = !about.hidden;
+  btn.setAttribute('aria-expanded', about.hidden ? 'false' : 'true');
+  btn.classList.toggle('active', !about.hidden);
+}
+
+// Open/close behavior shared by the title-row menus. Returns a close function.
+function initHeaderMenu(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  const trigger = wrap.querySelector('.ae-mode-trigger');
+  const menu = wrap.querySelector('.ae-mode-menu');
+  const close = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+  trigger.addEventListener('click', () => {
+    menu.hidden = !menu.hidden;
+    trigger.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+  });
+  // Clicking elsewhere, including the other menu's trigger, closes this menu
+  document.addEventListener('click', (e) => {
+    if (!menu.hidden && !wrap.contains(e.target)) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !menu.hidden) close();
+  });
+  return close;
+}
+
+// Team sources selected with the #team= hash param, comma separated (e.g. #team=office,city).
+// Returned in menu order.
+function getTeamSources() {
+  const picked = String(getHash().team || '').toLowerCase().split(',').map(t => t.trim());
+  return [...document.querySelectorAll('#teamSources .ae-team-source')]
+    .map(src => src.dataset.team)
+    .filter(team => picked.includes(team));
+}
+
+// Write the selected team sources to the hash. None selected clears the param.
+function setTeamSources(list) {
+  if (list.length) {
+    goHash({ team: list.join(',') });
+  } else {
+    goHash({}, 'team');
+  }
+}
+
+// Show the links for the selected team sources and update the menu state
+function applyTeamSource() {
+  const teams = getTeamSources();
+  document.querySelectorAll('#teamSources .ae-team-source').forEach(src => {
+    src.hidden = !teams.includes(src.dataset.team);
+  });
+  const panel = document.getElementById('teamSourcesPanel');
+  if (panel) panel.hidden = !teams.length;
+  document.querySelectorAll('#aeTeamMenu .ae-mode-option').forEach(row => {
+    const active = teams.includes(row.dataset.team);
+    row.classList.toggle('active', active);
+    const box = row.querySelector('.ae-mode-check');
+    if (box) box.checked = active;
+  });
+}
+
+// Create Team menu: My Office, My Community (Maestro), My City (StartupAtlanta), My Collaborators.
+// Options are built from the sources in #teamSources. Clicking a name shows only that link
+// (or clears it when it is the only one shown). Its checkbox adds or removes it, so several links can display.
+function setupTeamMenu() {
+  const menu = document.getElementById('aeTeamMenu');
+  if (!menu || menu.dataset.ready) return;
+  menu.dataset.ready = 'true';
+
+  menu.innerHTML = [...document.querySelectorAll('#teamSources .ae-team-source')].map(src =>
+    `<div class="ae-mode-option" data-team="${src.dataset.team}">
+      <button type="button" class="ae-mode-pick" role="menuitem" title="Only ${src.dataset.label}">
+        <span class="material-icons">${src.dataset.icon}</span>${src.dataset.label}
+      </button>
+      <input type="checkbox" class="ae-mode-check" role="menuitemcheckbox" aria-label="Include ${src.dataset.label}" title="Include ${src.dataset.label}">
+    </div>`).join('');
+
+  const close = initHeaderMenu('aeTeamWrap');
+  menu.addEventListener('click', (e) => {
+    const pick = e.target.closest('.ae-mode-pick');
+    if (!pick) return;
+    close();
+    const team = pick.closest('.ae-mode-option').dataset.team;
+    const current = getTeamSources();
+    setTeamSources(current.length === 1 && current[0] === team ? [] : [team]);
+  });
+  // Checkboxes keep the menu open while combining sources
+  menu.addEventListener('change', (e) => {
+    if (!e.target.closest('.ae-mode-check')) return;
+    setTeamSources([...menu.querySelectorAll('.ae-mode-option')]
+      .filter(row => row.querySelector('.ae-mode-check').checked)
+      .map(row => row.dataset.team));
+  });
+  applyTeamSource();
+}
 </script>
 
 <style>
@@ -115,19 +377,50 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
   <!-- Page header — content populated from config.yaml, inline fallback shown instantly -->
   <div style="margin-bottom:24px">
-    <h1 style="margin:0 0 6px 0; font-size:1.8rem" id="ae-title">
-      <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">auto_awesome</span>Arts Engine
-    </h1>
+    <div class="ae-title-row">
+      <h1 style="margin:0; font-size:1.8rem" id="ae-title">
+        <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project Engine
+      </h1>
+      <div class="ae-title-menus">
+        <div class="ae-mode-wrap" id="aeModeWrap">
+          <button type="button" class="ae-mode-trigger" id="aeModeTrigger" aria-haspopup="menu" aria-expanded="false" title="Activity">
+            <span>Activity</span><span class="material-icons">expand_more</span>
+          </button>
+          <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
+        </div>
+        <!-- Create Team menu — localhost only -->
+        <div class="ae-mode-wrap local" id="aeTeamWrap" style="display:none">
+          <button type="button" class="ae-mode-trigger" id="aeTeamTrigger" aria-haspopup="menu" aria-expanded="false" title="Create Team">
+            <span class="material-icons" style="font-size:18px;margin-right:4px">group_add</span><span>Create Team</span><span class="material-icons">expand_more</span>
+          </button>
+          <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
+        </div>
+      </div>
+      <!-- Upper right: map print/download icons are moved into #upperRightIcons by team/js/map.js -->
+      <div class="ae-upper-right">
+        <div id="upperRightIcons"></div>
+        <button type="button" id="localView" title="Hide local-only items" aria-pressed="false" style="display:none">
+          <span class="material-icons">visibility</span>
+        </button>
+      </div>
+    </div>
     <span style="margin:0; color:#888; font-size:0.95rem" id="ae-subtitle">
-      Video, image &amp; text generation via xAI, Claude, Gemini, OpenAI APIs <!-- · Storyboard Builder -->
+      Text, image &amp; video generation for projects via xAI, Claude, Gemini, OpenAI APIs <!-- · Storyboard Builder -->
     </span>
     - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
 
-    <div class="ae-backend-status" style="margin-top:8px">
-      <span style="font-size:0.95rem;color:#888;">
-        <span id="backendStartInstruction"><strong>Run "start art" on your localhost webroot via CLI commands to start the Rust API on port 8082</strong><br></span>
-        <span id="backendLabel">Checking backend on port 8082…</span>
-      </span>
+    <!-- Backend intro — shown only when #mode= includes art -->
+    <div id="artIntro" class="ae-arts-only" style="display:none">
+      <div class="ae-backend-status" style="margin-top:8px">
+        <span style="font-size:0.95rem;color:#888;">
+          <span id="backendLabel">Checking backend on port 8082…</span>
+          <!-- Start instruction, folded behind "more". app.js hides this span when the backend is online. -->
+          <span id="backendStartInstruction">
+            <a href="#" id="backendStartMore" onclick="event.preventDefault();toggleBackendStartDetail()">more</a>
+            <span id="backendStartDetail" hidden><span id="backendOfflineNote"></span><br><strong>Run "start art" on your localhost webroot via CLI commands to start the Rust API on port 8082</strong></span>
+          </span>
+        </span>
+      </div>
     </div>
   </div>
 
@@ -139,12 +432,55 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
          ================================================================= -->
     <div class="ae-left">
 
+      <!-- Team Sources panel — localhost only. Sources selected in the Create Team menu (#team=) are shown. -->
+      <div id="teamSources" class="local local-block" style="display:none">
+        <div class="ae-panel" id="teamSourcesPanel" hidden>
+          <h3>Team Sources</h3>
+          <div class="ae-team-source" data-team="office" data-label="My Office" data-icon="business" hidden>
+            <span class="material-icons">business</span>My Office: <a href="https://locations.georgia.org/display/team/" target="_blank" rel="noopener">locations.georgia.org/display/team</a>
+          </div>
+          <div class="ae-team-source" data-team="community" data-label="My Community (Maestro)" data-icon="groups" hidden>
+            <span class="material-icons">groups</span>My Community (Maestro): <a href="https://www.techsquareatl.com/maestro" target="_blank" rel="noopener">techsquareatl.com/maestro</a>
+          </div>
+          <div class="ae-team-source" data-team="city" data-label="My City (StartupAtlanta)" data-icon="location_city" hidden>
+            <span class="material-icons">location_city</span>My City (StartupAtlanta): <a href="https://startupatlanta.com/" target="_blank" rel="noopener">startupatlanta.com</a>
+          </div>
+          <div class="ae-team-source" data-team="collaborators" data-label="My Collaborators" data-icon="hub" hidden>
+            <span class="material-icons">hub</span>My Collaborators: <a href="https://dreamstudio.com/cv/" target="_blank" rel="noopener">dreamstudio.com/cv</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projects — View Projects button and project list, moved here from the GitHub widget by app.js -->
+      <div class="ae-panel" id="projectsPanel">
+        <h3 class="ae-projects-heading">
+          <span>
+            <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">view_kanban</span>
+            Projects
+          </span>
+          <span id="projectsPanelActions"></span>
+        </h3>
+        <div id="projectsPanelList"></div>
+      </div>
+
+      <!-- Locations — map listings rendered into #listwidget by team/js/map.js (loaded via localsite/js/embed.js) -->
+      <div class="ae-panel" id="locationsPanel">
+        <h3>
+          <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">place</span>
+          <span id="locationsTitle">Locations</span>
+        </h3>
+        <div id="listwidget"></div>
+      </div>
+
       <!-- Model panel (model keys + selection) — sits directly above Generate -->
       <div class="ae-panel" id="modelPanel">
         <div class="ae-output-header">
 
           <div class="ae-model-section">
-            <h3 class="ae-model-label">Model</h3>
+            <h3 class="ae-model-label">
+              <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">smart_toy</span>
+              Model
+            </h3>
             <div id="modelRow">
               <div class="sp-model-wrap">
                 <button class="sp-model-trigger" id="modelTrigger" type="button"></button>
@@ -186,8 +522,8 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
         <div id="statusBar" style="display:none"></div>
       </div>
 
-      <!-- Prompt Input Panel -->
-      <div class="ae-panel" id="promptPanel">
+      <!-- Prompt Input Panel — shown only when #mode= includes art -->
+      <div class="ae-panel ae-arts-only" id="promptPanel" style="display:none">
         <h3>Generate</h3>
         <div class="ae-output-controls">
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;width:100%">
@@ -225,7 +561,68 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
         </div>
         <textarea id="promptInput"
           placeholder="Enter a prompt… (Ctrl+Enter to generate)"></textarea>
-        <p style="margin:6px 0 10px;font-size:0.8rem;color:#aaa">Example: A honey bee near wildflowers at golden hour, photorealistic</p>
+        <div class="ae-example-row">
+          <p style="margin:0;font-size:0.8rem;color:#aaa">Example: A honey bee near wildflowers at golden hour, photorealistic</p>
+
+          <!-- Compact aspect ratio picker — shown only for Image and Video output -->
+          <div class="ae-ratio-mini-group" id="aspectRatioMini">
+            <button class="ae-ratio-btn ae-ratio-mini" data-ratio="square" title="Square 1:1"><span class="ratio-box" style="width:14px;height:14px"></span></button>
+            <button class="ae-ratio-btn ae-ratio-mini" data-ratio="landscape-wide" title="Wide 16:9"><span class="ratio-box" style="width:20px;height:11px"></span></button>
+            <button class="ae-ratio-btn ae-ratio-mini" data-ratio="landscape" title="Landscape 4:3"><span class="ratio-box" style="width:17px;height:13px"></span></button>
+            <button class="ae-ratio-btn ae-ratio-mini" data-ratio="portrait-tall" title="Tall 9:16"><span class="ratio-box" style="width:9px;height:16px"></span></button>
+            <button class="ae-ratio-btn ae-ratio-mini" data-ratio="portrait" title="Portrait 3:4"><span class="ratio-box" style="width:12px;height:16px"></span></button>
+            <button class="ae-ratio-expand" id="aspectRatioExpand" type="button" title="Show larger aspect ratio icons" aria-expanded="false" aria-controls="aspectRatioRow">
+              <span class="material-icons">expand_more</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Aspect Ratio, larger icons — revealed by the expand button (Image and Video only) -->
+        <div id="aspectRatioRow" style="margin-bottom:16px;display:none">
+          <div class="ae-ratio-group">
+
+            <!-- Square 1:1 -->
+            <button class="ae-ratio-btn" data-ratio="square">
+              <div class="ratio-icon">
+                <div class="ratio-box" style="width:32px;height:32px"></div>
+              </div>
+              <span class="ratio-label">Square 1:1</span>
+            </button>
+
+            <!-- Landscape Wide 16:9 -->
+            <button class="ae-ratio-btn" data-ratio="landscape-wide">
+              <div class="ratio-icon">
+                <div class="ratio-box" style="width:48px;height:27px"></div>
+              </div>
+              <span class="ratio-label">Wide 16:9</span>
+            </button>
+
+            <!-- Landscape 4:3 -->
+            <button class="ae-ratio-btn" data-ratio="landscape">
+              <div class="ratio-icon">
+                <div class="ratio-box" style="width:40px;height:30px"></div>
+              </div>
+              <span class="ratio-label">Landscape 4:3</span>
+            </button>
+
+            <!-- Portrait Tall 9:16 -->
+            <button class="ae-ratio-btn" data-ratio="portrait-tall">
+              <div class="ratio-icon">
+                <div class="ratio-box" style="width:18px;height:32px"></div>
+              </div>
+              <span class="ratio-label">Tall 9:16</span>
+            </button>
+
+            <!-- Portrait 3:4 -->
+            <button class="ae-ratio-btn" data-ratio="portrait">
+              <div class="ratio-icon">
+                <div class="ratio-box" style="width:24px;height:32px"></div>
+              </div>
+              <span class="ratio-label">Portrait 3:4</span>
+            </button>
+
+          </div>
+        </div>
 
         <div style="margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
           <button id="generateBtn">
@@ -294,86 +691,45 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
           word-break:break-all;color:#333"></pre>
       </div>
 
-      <!-- Aspect Ratio Selector -->
-      <div class="ae-panel">
-        <h3>Aspect Ratio</h3>
-        <div class="ae-ratio-group">
-
-          <!-- Square 1:1 -->
-          <button class="ae-ratio-btn" data-ratio="square">
-            <div class="ratio-icon">
-              <div class="ratio-box" style="width:32px;height:32px"></div>
-            </div>
-            <span class="ratio-label">Square 1:1</span>
-          </button>
-
-          <!-- Landscape Wide 16:9 -->
-          <button class="ae-ratio-btn" data-ratio="landscape-wide">
-            <div class="ratio-icon">
-              <div class="ratio-box" style="width:48px;height:27px"></div>
-            </div>
-            <span class="ratio-label">Wide 16:9</span>
-          </button>
-
-          <!-- Landscape 4:3 -->
-          <button class="ae-ratio-btn" data-ratio="landscape">
-            <div class="ratio-icon">
-              <div class="ratio-box" style="width:40px;height:30px"></div>
-            </div>
-            <span class="ratio-label">Landscape 4:3</span>
-          </button>
-
-          <!-- Portrait Tall 9:16 -->
-          <button class="ae-ratio-btn" data-ratio="portrait-tall">
-            <div class="ratio-icon">
-              <div class="ratio-box" style="width:18px;height:32px"></div>
-            </div>
-            <span class="ratio-label">Tall 9:16</span>
-          </button>
-
-          <!-- Portrait 3:4 -->
-          <button class="ae-ratio-btn" data-ratio="portrait">
-            <div class="ratio-icon">
-              <div class="ratio-box" style="width:24px;height:32px"></div>
-            </div>
-            <span class="ratio-label">Portrait 3:4</span>
-          </button>
-
-        </div>
-      </div>
-     <!-- Node Canvas — draggable scene flowchart (ComfyUI / Flora style) -->
+     <!-- Orchestration (node canvas) — draggable scene flowchart (ComfyUI / Flora style) -->
       <div class="ae-panel nc-panel-collapsed" id="nodeCanvasPanel">
         <h3 class="nc-panel-heading">
           <span>
             <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">hub</span>
-            Node Canvas
-            <span style="font-size:0.72rem;font-weight:400;color:#aaa;margin-left:6px">beta</span>
+            Orchestration
           </span>
-          <button class="nc-panel-toggle" id="nodeCanvasToggle" type="button" aria-expanded="false" aria-controls="nodeCanvasContent">
-            <span class="material-icons">open_in_full</span>
-            <span class="nc-panel-toggle-label">Open Canvas</span>
-          </button>
+          <span class="nc-panel-buttons">
+            <button class="nc-panel-toggle" id="nodeCanvasToggle" type="button" aria-expanded="false" aria-controls="nodeCanvasContent">
+              <span class="material-icons">open_in_full</span>
+              <span class="nc-panel-toggle-label">Open</span>
+            </button>
+            <button class="nc-panel-toggle" id="nodeCanvasAboutToggle" type="button" aria-expanded="false" aria-controls="nodeCanvasAbout" onclick="toggleOrchestrationAbout()">
+              <span class="material-icons">info</span>
+              <span>About</span>
+            </button>
+          </span>
         </h3>
+        <!-- Intro, revealed with the About button whether or not the canvas is open -->
+        <p class="nc-panel-about" id="nodeCanvasAbout" hidden>
+          Flora-style flow built from separate nodes: a <strong>Request</strong> node (prompt),
+          a <strong>Guidance</strong> node (image upload), and a <strong>Generate</strong> node with its own
+          <strong>model dropdown</strong> — the node adapts to the chosen model: the orange image-input
+          port appears only when the model supports image input, and the output type (image / text / video / 3D)
+          follows the model's capabilities. Wire an output port (●) to a matching input port
+          (purple = text, orange = image); a Generate output can feed another node. Click <strong>Next</strong>
+          to auto-chain a follow-up scene. Generated images also appear below in the <span class="ae-flow-title">Workflow</span>.
+          Uses the provider keys from "My Model Keys" above.
+        </p>
         <div class="nc-panel-content" id="nodeCanvasContent">
-          <p style="margin:0 0 12px 0;font-size:0.85rem;color:#888">
-            Flora-style flow built from separate nodes: a <strong>Text</strong> node (prompt),
-            an <strong>Image</strong> node (upload), and a <strong>Generate</strong> node with its own
-            <strong>model dropdown</strong> — the node adapts to the chosen model: the orange image-input
-            port appears only when the model supports image input, and the output type (image / text / video / 3D)
-            follows the model's capabilities. Wire an output port (●) to a matching input port
-            (purple = text, orange = image); a Generate output can feed another node. Click <strong>Next</strong>
-            to auto-chain a follow-up scene. Generated images also appear below in the Storyboard Flow.
-            Uses the provider keys from "My Model Keys" above.
-          </p>
           <div id="nodeCanvasMount"></div>
         </div>
       </div>
 
-      <!-- Storyboard Flowchart Panel -->
+      <!-- Flowchart Panel — title set by mode: Workflow, Storyboard Flow, Activities, Project Flow -->
       <div class="ae-panel">
         <h3>
           <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">account_tree</span>
-          Storyboard Flow
+          <span class="ae-flow-title">Workflow</span>
         </h3>
         <p style="margin:0 0 12px 0;font-size:0.85rem;color:#888">
           <a href="#" onclick="event.preventDefault();document.getElementById('csvFileInput').click()">Load a storyboard</a>, <a href="#" onclick="artsEngine.loadSampleCSV(event)">sample scenes (prompts.csv)</a>, or our <a href="#" onclick="artsEngine.loadNodesCSV(event)">data-pipeline flow</a> (<a href="../../data-pipeline/admin" target="data-pipeline-admin">admin</a>).
@@ -412,17 +768,24 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
          ================================================================= -->
     <div class="ae-right">
 
+      <!-- #pageMap is moved here from #listwidget by team/js/map.js (moveMapToCatch) -->
+      <div id="mapCatch"></div>
+
       <!-- GitHub Token Widget (projects/js/issues.js) -->
       <div class="ae-panel">
         <h3>
           <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">hub</span>
-          GitHub Output
+          My Content
         </h3>
         <p style="margin:0 0 10px 0;font-size:0.83rem;color:#888">
           Enter your GitHub token to save your generated&nbsp;content
         </p>
+        <!-- Destination for Save to GitHub, filled by app.js renderGitHubDestination() -->
+        <p id="githubOutputDest" style="margin:0 0 10px 0;font-size:0.83rem;color:#888">
+          Output folder: modelearth/requests/generated
+        </p>
         <!--
-          Arts Engine / GitHub Token Widget
+          Project Engine / GitHub Token Widget
           Token saved in localStorage as 'github_token'
           Widget title can be set via JS config; showProject:false for minimal view
         -->
@@ -453,10 +816,7 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
         <!-- Filter dropdown — shown once repos are loaded -->
         <div id="resourceSelectorMount" style="margin-bottom:10px"></div>
 
-        <button id="openRepoModalBtn"
-          style="width:100%;padding:8px 12px;background:#4a90e2;color:#fff;border:none;
-                 border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;
-                 display:flex;align-items:center;justify-content:center;gap:6px">
+        <button id="openRepoModalBtn" class="ae-action-btn" style="width:100%">
           <span class="material-icons" style="font-size:1rem">add_circle_outline</span>
           Choose Resource Areas
         </button>
@@ -484,8 +844,19 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
   </div><!-- /ae-container -->
 
 
-  <script type="text/javascript" src="../../localsite/js/embed.js?map=airports&showindex=1&showheader=true"></script>
-  <div id="listwidget"></div>
+  <script>
+  // Airports dataset only for the model.earth modelsite (home/webroot.yaml's default site).
+  // Other modelsites get the site's default dataset: without map=, showindex=1 picks the
+  // first dataset in the site's list (team/js/map.js loadShowConfigs).
+  (function() {
+    const modelsite = getHash().site || (window.param && param.modelsite) || window.modelsiteUniversal
+      || (typeof Cookies !== 'undefined' && Cookies.get('modelsite')) || 'model.earth';
+    const mapParam = modelsite === 'model.earth' ? 'map=airports&' : '';
+    const embed = document.createElement('script');
+    embed.src = '../../localsite/js/embed.js?' + mapParam + 'showindex=1&showheader=true';
+    document.currentScript.after(embed);
+  })();
+  </script>
 
   <p style="margin:20px 0;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px">
     <button id="authInfoIcon" class="icon-circle-btn" type="button" aria-label="About Our Engine" onclick="window.location.href='../'">i</button>
@@ -702,7 +1073,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     agentsContainer.style.display = open ? '' : 'none';
-    toggleAgentsEditor.style.display = open ? 'none' : '';
+    toggleAgentsEditor.classList.toggle('active', open);
   }
 
   if (toggleAgentsEditor && agentsContainer) {
@@ -719,7 +1090,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      toggleAgentsEditor.style.display = 'none';
       ensureAgentsAssets()
         .then(function() {
           KeyManager.migrateFromLegacy();

@@ -192,7 +192,7 @@ Text generation output: full-width `<pre>`-style div with prompt label above, pr
 
 ### Right Column Panels
 
-1. **GitHub Output** — `new GitHubIssuesManager('issues-root', { showProject: false })`. Token stored in `localStorage` as `github_token`. "Save to GitHub" button revealed after generation — downloads each image as base64 and commits to a user-specified repo/path via GitHub Contents API.
+1. **My Content** (GitHub) — `new GitHubIssuesManager('issues-root', { showProject: false })`. Token stored in `localStorage` as `github_token`. "Save to GitHub" button revealed after generation — downloads each image as base64 and commits to a user-specified repo/path via GitHub Contents API.
 
 2. **Settings** — Backend URL text input (updates `artsEngine.apiBase` on change). Default from `config.yaml` `api_base`. Cargo run instructions for the Rust backend.
 

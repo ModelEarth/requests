@@ -1,8 +1,9 @@
-# Arts Engine — Claude agent configuration
+# Project Engine — Claude agent configuration
 # Local override of requests/template/config.yaml
 # api_base uses ARTS_ENGINE_PORT=8082 from automation/.env.example
 
-title: "Arts Engine"
-subtitle: "Video, image & text generation via xAI, Claude, Gemini, OpenAI APIs"
-icon: "auto_awesome"
+title: "Project Engine"
+subtitle: "Text, image & video generation for projects via xAI, Claude, Gemini, OpenAI APIs"
+icon: "tips_and_updates"
 api_base: "http://localhost:8082"
+# title, subtitle and icon apply to the default Project mode (#mode= selects Arts, Activities or Design)

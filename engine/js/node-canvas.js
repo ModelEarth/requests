@@ -2,8 +2,8 @@
  * Node Canvas — Flora-style typed-node creative flow.
  *
  * Nodes wired by typed ports (purple = text, orange = image):
- *   • Text node     — a prompt block.            output: text
- *   • Image node    — an uploaded source image.  output: image
+ *   • Request node  — a prompt block.            output: text   (type "text")
+ *   • Guidance node — an uploaded source image.  output: image  (type "image")
  *   • Generate node — self-contained: pick any model from the dropdown and the
  *                     node adapts to it. Inputs: prompt (text) always, plus an
  *                     image input ONLY when the model supports image input.
@@ -104,7 +104,7 @@
         const label = toggle.querySelector(".nc-panel-toggle-label");
         if (icon)
           icon.textContent = isExpanded ? "close_fullscreen" : "open_in_full";
-        if (label) label.textContent = isExpanded ? "Minimize" : "Open Canvas";
+        if (label) label.textContent = isExpanded ? "Minimize" : "Open";
       };
 
       setExpanded(expanded);
@@ -220,6 +220,11 @@
         this.pan = { x: state.pan.x, y: state.pan.y };
       if (Number.isFinite(state.zoom))
         this.zoom = Math.min(1.5, Math.max(0.1, state.zoom));
+      // Zoomed out below 50% — reopen at 100%, keeping the same top-left corner in view.
+      if (this.zoom < 0.5) {
+        this.pan = { x: this.pan.x / this.zoom, y: this.pan.y / this.zoom };
+        this.zoom = 1;
+      }
 
       for (const saved of state.nodes) {
         if (!saved?.id || !["text", "image", "generate"].includes(saved.type))
@@ -317,8 +322,8 @@
     _build() {
       this.mount.innerHTML = `
         <div class="nc-toolbar">
-          <button class="nc-btn nc-btn-text"  data-add="text"><span class="material-icons">text_fields</span>Text</button>
-          <button class="nc-btn nc-btn-image" data-add="image"><span class="material-icons">image</span>Image</button>
+          <button class="nc-btn nc-btn-text"  data-add="text"><span class="material-icons">text_fields</span>Request</button>
+          <button class="nc-btn nc-btn-image" data-add="image"><span class="material-icons">image</span>Guidance</button>
           <button class="nc-btn nc-btn-gen"   data-add="generate"><span class="material-icons">auto_awesome</span>Generate</button>
           <button class="nc-btn" data-act="reset"><span class="material-icons">center_focus_strong</span>Reset View</button>
           <button class="nc-btn" data-act="clear"><span class="material-icons">clear_all</span>Clear</button>
@@ -617,7 +622,7 @@
         return `
           <div class="nc-node-head">
             <span class="material-icons">text_fields</span>
-            <span class="nc-node-title">Text</span>
+            <span class="nc-node-title">Request</span>
             <span class="nc-node-del material-icons" title="Delete node">close</span>
             <span class="nc-port nc-port-out" data-dir="out" data-ptype="text" title="Output"></span>
           </div>
@@ -627,7 +632,7 @@
         return `
           <div class="nc-node-head">
             <span class="material-icons">image</span>
-            <span class="nc-node-title">Image</span>
+            <span class="nc-node-title">Guidance</span>
             <span class="nc-node-del material-icons" title="Delete node">close</span>
             <span class="nc-port nc-port-out" data-dir="out" data-ptype="image" title="Output"></span>
           </div>
@@ -662,7 +667,7 @@
         <div class="nc-node-body">
           <select class="nc-model" title="Model for this node">${this._modelOptions(node.provider, node.model)}</select>
           <div class="nc-inrow" data-row="prompt">
-            <span class="nc-port nc-port-in" data-dir="in" data-port="prompt" data-ptype="text" title="Prompt (from a Text node)"></span>
+            <span class="nc-port nc-port-in" data-dir="in" data-port="prompt" data-ptype="text" title="Prompt (from a Request node)"></span>
             Prompt
           </div>
           <div class="nc-inrow" data-row="image">${this._imageRowInner(node)}</div>
@@ -1077,7 +1082,7 @@
       return "";
     }
 
-    // Full prompt sent to the model: the scene text (from the Text node) plus
+    // Full prompt sent to the model: the scene text (from the Request node) plus
     // this node's own extra instructions (style etc.). getPrompt() stays the
     // scene-only text so the Storyboard shows the scene, not the styling.
     _finalPrompt(node) {
@@ -1367,7 +1372,7 @@
         this._modelSupportsImageInput(node) &&
         !!this.getImageInput(node);
       if (!prompt && !has3dImage) {
-        node._error = "Connect a Text node, or add instructions";
+        node._error = "Connect a Request node, or add instructions";
         this._renderOutput(node);
         return;
       }
