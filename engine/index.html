@@ -106,10 +106,13 @@ function getEngineMode() {
   return getEngineModes()[0];
 }
 
-// Combined title from each mode's name (singular), e.g. "Project Engine", "Project & Arts Engine", "Project, Arts & Activity Engine"
+// Combined title from each mode's name (singular), e.g. "Project Engine", "Project & Arts Engine".
+// Three modes checked is the Abundance Engine; all of them, the Everything Engine.
 function getEngineTitle() {
   const modes = getEngineModes();
   if (modes.length === 1) return window.AE_MODES[modes[0]].title;
+  if (modes.length === Object.keys(window.AE_MODES).length) return 'Everything Engine';
+  if (modes.length === 3) return 'Abundance Engine';
   const names = modes.map(key => window.AE_MODES[key].name);
   return names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] + ' Engine';
 }
@@ -180,6 +183,30 @@ function setupEngineModeMenu() {
     </div>`).join('');
 
   const close = initHeaderMenu('aeModeWrap');
+  // The title (text and its icon) also opens the menu, like the arrow beside it
+  document.getElementById('ae-title')?.addEventListener('click', () => trigger.click());
+
+  // Menu position: aligned to the title's left edge, unless the click is further right than the
+  // checkboxes would be. Then it shifts so the checkboxes sit under the click, at most to the
+  // title's right end where the down arrow is.
+  const wrap = document.getElementById('aeModeWrap');
+  let clickX = null;
+  wrap.addEventListener('click', (e) => {
+    if (e.isTrusted && e.detail > 0 && !menu.contains(e.target)) clickX = e.clientX; // mouse clicks on the title or arrow
+  }, true);
+  trigger.addEventListener('click', () => {
+    const x = clickX;
+    clickX = null;
+    if (menu.hidden) return;
+    menu.style.left = '0px';
+    if (x === null) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const box = menu.querySelector('.ae-mode-check');
+    const boxCenter = box ? box.getBoundingClientRect().left + box.offsetWidth / 2 - menuRect.left : menuRect.width;
+    const maxLeft = Math.max(0, wrapRect.width - menuRect.width);
+    menu.style.left = Math.min(maxLeft, Math.max(0, x - wrapRect.left - boxCenter)) + 'px';
+  });
   menu.addEventListener('click', (e) => {
     const pick = e.target.closest('.ae-mode-pick');
     if (!pick) return;
@@ -378,16 +405,17 @@ function setupTeamMenu() {
   <!-- Page header — content populated from config.yaml, inline fallback shown instantly -->
   <div style="margin-bottom:24px">
     <div class="ae-title-row">
-      <h1 style="margin:0; font-size:1.8rem" id="ae-title">
-        <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project Engine
-      </h1>
+      <!-- Title with a down arrow to its right; clicking either (title text or icon) opens #aeModeMenu -->
+      <div class="ae-mode-wrap ae-title-wrap" id="aeModeWrap">
+        <h1 style="margin:0; font-size:1.8rem" id="ae-title" title="Choose engine">
+          <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project Engine
+        </h1>
+        <button type="button" class="ae-mode-trigger ae-title-arrow" id="aeModeTrigger" aria-haspopup="menu" aria-expanded="false" title="Choose engine">
+          <span class="material-icons">expand_more</span>
+        </button>
+        <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
+      </div>
       <div class="ae-title-menus">
-        <div class="ae-mode-wrap" id="aeModeWrap">
-          <button type="button" class="ae-mode-trigger" id="aeModeTrigger" aria-haspopup="menu" aria-expanded="false" title="Activity">
-            <span>Activity</span><span class="material-icons">expand_more</span>
-          </button>
-          <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
-        </div>
         <!-- Create Team menu — localhost only -->
         <div class="ae-mode-wrap local" id="aeTeamWrap" style="display:none">
           <button type="button" class="ae-mode-trigger" id="aeTeamTrigger" aria-haspopup="menu" aria-expanded="false" title="Create Team">

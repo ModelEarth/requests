@@ -21,6 +21,41 @@
   fill: #4a90e2;
 }
 
+/* Title + down arrow (#aeModeTrigger) open #aeModeMenu below the title */
+.ae-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#ae-title {
+  cursor: pointer;
+}
+
+.ae-mode-trigger.ae-title-arrow {
+  padding: 2px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.ae-mode-trigger.ae-title-arrow .material-icons {
+  font-size: 28px;
+}
+
+.ae-title-wrap .ae-mode-menu {
+  left: 0;
+  right: auto;
+}
+
+.dark .ae-mode-trigger.ae-title-arrow {
+  background: transparent;
+}
+
+.dark .ae-mode-trigger.ae-title-arrow:hover {
+  background: #363636;
+}
+
 .ae-title-menus {
   display: flex;
   flex-wrap: wrap;
@@ -1701,6 +1736,16 @@ resource-area-selector,
 
 .dark github-repo-modal {
   color: #e5e7eb;
+}
+
+/* The popup's overlay is z-50, below page layers at z-index 1000 (map controls, sticky list controls).
+   Raise the popup, and the dropdown layer its menus render into so they stay above it. */
+github-repo-modal {
+  position: relative;
+  z-index: 10000;
+}
+[data-radix-popper-content-wrapper] {
+  z-index: 10001 !important;
 }
 
 /* Upper right of the title row: #upperRightIcons (map print/download icons) + #localView */
