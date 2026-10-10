@@ -93,10 +93,11 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 })();
 
 // Selected modes from the #mode= hash param, comma separated (e.g. #mode=work,art).
-// Returned in menu order. Defaults to Project (key "work").
+// #mode=everything selects them all. Returned in menu order. Defaults to Project (key "work").
 function getEngineModes() {
   const modes = window.AE_MODES || {};
   const picked = String(getHash().mode || '').toLowerCase().split(',').map(m => m.trim());
+  if (picked.includes('everything')) return Object.keys(modes);
   const list = Object.keys(modes).filter(key => picked.includes(key));
   return list.length ? list : ['work'];
 }
@@ -118,9 +119,12 @@ function getEngineTitle() {
 }
 
 // Write the selected modes to the hash. Project (work) alone is the default, so it clears the param.
+// All of them is written as #mode=everything.
 function setEngineModes(list) {
   if (!list.length || (list.length === 1 && list[0] === 'work')) {
     goHash({}, 'mode');
+  } else if (list.length === Object.keys(window.AE_MODES).length) {
+    goHash({ mode: 'everything' });
   } else {
     goHash({ mode: list.join(',') });
   }
