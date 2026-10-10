@@ -75,6 +75,7 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
   waitForElm('#aeModeMenu').then(setupEngineModeMenu);
   waitForElm('#aeTeamMenu').then(setupTeamMenu);
+  waitForElm('#teamSourcesAddMenu').then(setupTeamMenu); // "Add" in the Team Sources heading
   document.addEventListener('hashChangeEvent', applyEngineMode, false);
   document.addEventListener('hashChangeEvent', applyTeamSource, false);
 
@@ -149,7 +150,8 @@ function applyEngineMode() {
 
   const titleEl = document.getElementById('ae-title');
   if (titleEl) {
-    titleEl.innerHTML = getEngineIconHTML(m.icon) + title;
+    // "Engine" (the last word) gets .darktext from localsite/css/base.css
+    titleEl.innerHTML = getEngineIconHTML(m.icon) + title.replace(/ Engine$/, ' <span class="darktext">Engine</span>');
   }
   const subtitleEl = document.getElementById('ae-subtitle');
   if (subtitleEl) subtitleEl.innerHTML = m.subtitle;
@@ -289,14 +291,23 @@ function toggleOrchestrationAbout() {
 }
 
 // Open/close behavior shared by the title-row menus. Returns a close function.
-function initHeaderMenu(wrapId) {
+// onClose (optional) runs whenever the menu closes: clicking off it, Escape, a pick, or the trigger again
+function initHeaderMenu(wrapId, onClose) {
   const wrap = document.getElementById(wrapId);
   const trigger = wrap.querySelector('.ae-mode-trigger');
   const menu = wrap.querySelector('.ae-mode-menu');
-  const close = () => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); };
+  const close = () => {
+    menu.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    if (onClose) onClose();
+  };
   trigger.addEventListener('click', () => {
-    menu.hidden = !menu.hidden;
-    trigger.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+    if (!menu.hidden) {
+      close();
+      return;
+    }
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
   });
   // Clicking elsewhere, including the other menu's trigger, closes this menu
   document.addEventListener('click', (e) => {
@@ -334,19 +345,47 @@ function applyTeamSource() {
   });
   const panel = document.getElementById('teamSourcesPanel');
   if (panel) panel.hidden = !teams.length;
-  document.querySelectorAll('#aeTeamMenu .ae-mode-option').forEach(row => {
+  document.querySelectorAll('#aeTeamMenu .ae-mode-option, #teamSourcesAddMenu .ae-mode-option').forEach(row => {
     const active = teams.includes(row.dataset.team);
     row.classList.toggle('active', active);
     const box = row.querySelector('.ae-mode-check');
     if (box) box.checked = active;
   });
+  updateCreateTeamButton();
+
+  // With every source checked there's nothing left to add, so the panel's button reads "Edit"
+  const addTrigger = document.getElementById('teamSourcesAddTrigger');
+  if (addTrigger) {
+    const allChecked = teams.length > 0 && teams.length === document.querySelectorAll('#teamSources .ae-team-source').length;
+    addTrigger.querySelector('.ae-team-add-label').textContent = allChecked ? 'Edit' : 'Add';
+    addTrigger.querySelector('.ae-team-add-icon').textContent = allChecked ? 'edit' : 'group_add';
+    addTrigger.title = allChecked ? 'Edit team sources' : 'Add team source';
+  }
+}
+
+// "Create Team" hides once one or more team sources are checked (the Team Sources panel's "Add" button
+// takes over) and returns when none are. Only updated while its menu is closed, so checking boxes
+// doesn't pull the menu away; it updates when you click off the menu.
+function updateCreateTeamButton() {
+  const wrap = document.getElementById('aeTeamWrap');
+  const menu = document.getElementById('aeTeamMenu');
+  if (!wrap || !menu || !menu.hidden) return;
+  wrap.classList.toggle('ae-team-hidden', getTeamSources().length > 0);
 }
 
 // Create Team menu: My Office, My Community (Maestro), My City (StartupAtlanta), My Collaborators.
 // Options are built from the sources in #teamSources. Clicking a name shows only that link
 // (or clears it when it is the only one shown). Its checkbox adds or removes it, so several links can display.
+// The same menu also opens from the "Add" button in the Team Sources panel heading.
 function setupTeamMenu() {
-  const menu = document.getElementById('aeTeamMenu');
+  setupTeamMenuIn('aeTeamWrap');
+  setupTeamMenuIn('teamSourcesAddWrap');
+  applyTeamSource();
+}
+
+function setupTeamMenuIn(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  const menu = wrap && wrap.querySelector('.ae-mode-menu');
   if (!menu || menu.dataset.ready) return;
   menu.dataset.ready = 'true';
 
@@ -358,14 +397,14 @@ function setupTeamMenu() {
       <input type="checkbox" class="ae-mode-check" role="menuitemcheckbox" aria-label="Include ${src.dataset.label}" title="Include ${src.dataset.label}">
     </div>`).join('');
 
-  const close = initHeaderMenu('aeTeamWrap');
+  const close = initHeaderMenu(wrapId, updateCreateTeamButton);
   menu.addEventListener('click', (e) => {
     const pick = e.target.closest('.ae-mode-pick');
     if (!pick) return;
-    close();
     const team = pick.closest('.ae-mode-option').dataset.team;
     const current = getTeamSources();
     setTeamSources(current.length === 1 && current[0] === team ? [] : [team]);
+    close();
   });
   // Checkboxes keep the menu open while combining sources
   menu.addEventListener('change', (e) => {
@@ -374,7 +413,6 @@ function setupTeamMenu() {
       .filter(row => row.querySelector('.ae-mode-check').checked)
       .map(row => row.dataset.team));
   });
-  applyTeamSource();
 }
 </script>
 
@@ -412,7 +450,7 @@ function setupTeamMenu() {
       <!-- Title with a down arrow to its right; clicking either (title text or icon) opens #aeModeMenu -->
       <div class="ae-mode-wrap ae-title-wrap" id="aeModeWrap">
         <h1 style="margin:0; font-size:1.8rem" id="ae-title" title="Choose engine">
-          <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project Engine
+          <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project <span class="darktext">Engine</span>
         </h1>
         <button type="button" class="ae-mode-trigger ae-title-arrow" id="aeModeTrigger" aria-haspopup="menu" aria-expanded="false" title="Choose engine">
           <span class="material-icons">expand_more</span>
@@ -467,7 +505,16 @@ function setupTeamMenu() {
       <!-- Team Sources panel — localhost only. Sources selected in the Create Team menu (#team=) are shown. -->
       <div id="teamSources" class="local local-block" style="display:none">
         <div class="ae-panel" id="teamSourcesPanel" hidden>
-          <h3>Team Sources</h3>
+          <h3 class="ae-team-sources-heading">
+            <span>Team Sources</span>
+            <!-- Add: same icon and menu as "Create Team" -->
+            <div class="ae-mode-wrap" id="teamSourcesAddWrap">
+              <button type="button" class="ae-mode-trigger" id="teamSourcesAddTrigger" aria-haspopup="menu" aria-expanded="false" title="Add team source">
+                <span class="material-icons ae-team-add-icon" style="font-size:18px;margin-right:4px">group_add</span><span class="ae-team-add-label">Add</span><span class="material-icons">expand_more</span>
+              </button>
+              <div class="ae-mode-menu" id="teamSourcesAddMenu" role="menu" hidden></div>
+            </div>
+          </h3>
           <div class="ae-team-source" data-team="office" data-label="My Office" data-icon="business" hidden>
             <span class="material-icons">business</span>My Office: <a href="https://locations.georgia.org/display/team/" target="_blank" rel="noopener">locations.georgia.org/display/team</a>
           </div>

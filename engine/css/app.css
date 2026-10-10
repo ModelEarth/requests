@@ -503,6 +503,24 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
+/* Create Team hidden once team sources are chosen (beats localsite's .local !important on localhost) */
+#aeTeamWrap.ae-team-hidden {
+  display: none !important;
+}
+
+/* Team Sources heading: title left, "Add" menu button at the far right */
+.ae-panel h3.ae-team-sources-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ae-team-sources-heading .ae-mode-wrap {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .dark .ae-panel h3 {
   color: #aaa;
 }
