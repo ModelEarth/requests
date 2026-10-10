@@ -1709,6 +1709,7 @@ class ArtsEngine {
         defaultRepo: 'requests',
         showProject: false,
         showTokenSource: true,
+        rowView: true,
       });
     } catch (e) {
       console.warn('GitHubIssuesManager init failed:', e);

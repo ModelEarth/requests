@@ -430,8 +430,11 @@
 }
 
 @media (max-width: 767px) {
+  /* One-column grid rather than a column flexbox: as a column flex item, .ae-right's
+     container-type (inline-size) made Chrome size it taller than its content, leaving blank space below */
   .ae-container {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
   .ae-right {
     order: -1; /* GitHub token widget first on mobile */
