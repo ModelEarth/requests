@@ -1718,12 +1718,17 @@ class ArtsEngine {
     this.moveProjectsToPanel();
   }
 
-  // Move the widget's View Projects button and project list into the Projects panel.
+  // Move the widget's View Projects button (with its filters toggle) and project list into the Projects panel.
   // issues.js finds both by id, so its show/hide logic still applies after the move.
   moveProjectsToPanel() {
     if (typeof waitForElm !== 'function') return;
     waitForElm('#toggleProjectsSection').then(btn => {
-      document.getElementById('projectsPanelActions')?.appendChild(btn);
+      const actions = document.getElementById('projectsPanelActions');
+      if (!actions) return;
+      actions.appendChild(btn);
+      // The filters toggle, created with View Projects, sits to its right
+      const filtersBtn = document.getElementById('toggleProjectFilters');
+      if (filtersBtn) actions.appendChild(filtersBtn);
     });
     waitForElm('#projectsSectionsContainer').then(list => {
       document.getElementById('projectsPanelList')?.appendChild(list);

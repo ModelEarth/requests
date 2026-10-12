@@ -56,14 +56,6 @@
   background: #363636;
 }
 
-.ae-title-menus {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 9px;
-  margin-left: auto;
-}
-
 .ae-mode-wrap {
   position: relative;
 }
@@ -95,7 +87,8 @@
 
 .ae-mode-menu {
   position: absolute;
-  z-index: 100;
+  /* Above the map's Leaflet layers (400) and controls (1000), below modals (10000) */
+  z-index: 1100;
   right: 0;
   top: calc(100% + 6px);
   min-width: 170px;
@@ -441,6 +434,12 @@
 .dark .content a:not(.btn):hover,
 .dark .content a:not(.btn):focus {
   color: #bfd8ff;
+}
+
+/* No underline on map controls (zoom + and -) */
+.content .leaflet-control-container a:hover,
+.content .leaflet-control-container a:focus {
+  text-decoration: none;
 }
 /* =========================================================
    Layout
@@ -1665,8 +1664,9 @@
   margin-bottom: 0; /* No gap below the title while the list is hidden */
 }
 
-/* View / Hide Projects button at the far right of the title */
-#projectsPanelActions #toggleProjectsSection {
+/* View / Hide Projects button at the far right of the title, with the filters toggle after it */
+#projectsPanelActions #toggleProjectsSection,
+#projectsPanelActions #toggleProjectFilters {
   text-transform: none;
   letter-spacing: normal;
   font-weight: 500;
@@ -1778,8 +1778,63 @@ github-repo-modal {
   align-items: center;
 }
 
+/* Create Team, first in #upperRightIcons. Under 750px wide the icon-only button replaces it.
+   Scoped to #upperRightIcons to outrank the shared #localView/#aeTeamIconTrigger button rule below. */
+#upperRightIcons #aeTeamWrap {
+  margin: 0 5px;
+}
+#upperRightIcons #aeTeamIconTrigger {
+  display: none;
+  margin: 0;
+}
+@media (max-width: 749.98px) {
+  #upperRightIcons #aeTeamTrigger {
+    display: none;
+  }
+  #upperRightIcons #aeTeamIconTrigger {
+    display: inline-flex;
+  }
+}
+
+/* Under 680px wide the icons drop to their own line under the title (#aeModeWrap), aligned left */
+@media (max-width: 679.98px) {
+  .ae-upper-right {
+    flex-basis: 100%;
+    margin-left: -5px; /* lines the first icon's edge up with the title, past its 5px side margin */
+  }
+  #upperRightIcons {
+    justify-content: flex-start;
+  }
+  /* Icon buttons 30% bigger on the left: 32px to 42px, 18px icons to 23px.
+     Prefixed with .ae-upper-right to outrank the #localView rules later in this file. */
+  .ae-upper-right .print-download-icon,
+  .ae-upper-right #localView,
+  .ae-upper-right #introDetailsToggle,
+  #upperRightIcons #aeTeamIconTrigger {
+    width: 42px;
+    height: 42px;
+    padding: 8px;
+  }
+  .ae-upper-right .print-download-icon svg {
+    width: 23px;
+    height: 23px;
+  }
+  .ae-upper-right .print-download-icon .material-icons,
+  .ae-upper-right #localView .material-icons,
+  .ae-upper-right #introDetailsToggle .material-icons,
+  .ae-upper-right #aeTeamIconTrigger .material-icons {
+    font-size: 23px;
+  }
+  /* Popups open rightward from their icons, since right-aligned ones would run off the left edge */
+  .ae-upper-right .ae-mode-menu,
+  .ae-upper-right .print-download-popup {
+    left: 0;
+    right: auto;
+  }
+}
+
 /* Matches .print-download-icon from team/js/print-download.js */
-#localView {
+#localView, #aeTeamIconTrigger, #introDetailsToggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1795,21 +1850,21 @@ github-repo-modal {
   cursor: pointer;
   transition: background-color 0.3s;
 }
-#localView:hover {
+#localView:hover, #aeTeamIconTrigger:hover, #introDetailsToggle:hover {
   background: #e5e5e5;
   color: #666;
 }
-#localView .material-icons {
+#localView .material-icons, #aeTeamIconTrigger .material-icons, #introDetailsToggle .material-icons {
   font-size: 18px;
   line-height: 1;
   user-select: none;
 }
-.dark #localView {
+.dark #localView, .dark #aeTeamIconTrigger, .dark #introDetailsToggle {
   background: #3a3a3a;
   border-color: #555;
   color: #888;
 }
-.dark #localView:hover {
+.dark #localView:hover, .dark #aeTeamIconTrigger:hover, .dark #introDetailsToggle:hover {
   background: #4a4a4a;
   color: #aaa;
 }
