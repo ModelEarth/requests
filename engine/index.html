@@ -486,6 +486,10 @@ function setupTeamMenuIn(wrapId) {
         <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
           <span class="material-icons">info</span>
         </button>
+        <!-- Tour play/pause, rightmost. Shares "Start Tour" (syncTourPlayButtons in localsite.js). -->
+        <button type="button" id="tourPlayButton" class="tour-play-button" data-tour-panel="locationDetails" title="Start Tour" aria-pressed="false">
+          <span class="material-icons">play_arrow</span>
+        </button>
       </div>
     </div>
     <!-- Subtitle, API link and backend status — hidden until #introDetailsToggle is clicked -->
