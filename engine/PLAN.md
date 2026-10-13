@@ -493,4 +493,4 @@ scene,prompt,aspect_ratio,style,notes,Naics,Industry,Count
 - **FloraFauna.ai** — storyboard flowchart style reference
 - **local env file** — API keys and server config, at the path `automation/paths.yaml` points to (webroot-level, gitignored)
 - **engine/js/projects.js** — GitHub token widget (reuse `GitHubIssuesManager`)
-- **projects/css/issues.css** — widget styles (include in page)
+- **engine/css/projects.css** — widget styles (include in page)
