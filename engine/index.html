@@ -279,14 +279,79 @@ onElmReady('#localView', (btn) => {
   });
 });
 
-// #introDetailsToggle — reveal or hide the subtitle, API link and backend status under the title
+// #introDetailsToggle — reveal or hide the subtitle, API link and backend status under the title.
+// While the location details float over a Full Screen map (#locationFloatLayer, team/js/map.js), they show
+// in #introFloatPanel instead, covering #location-details, with "About Engine" as the .location-title
+// and a close X in the panel's upper right.
+let introFloat = null; // { panel, details, wasHidden, title, watch } while #introFloatPanel is open
 function toggleIntroDetails() {
   const details = document.getElementById('introDetails');
   const btn = document.getElementById('introDetailsToggle');
   if (!details || !btn) return;
+  if (introFloat) {
+    closeIntroFloatPanel();
+    return;
+  }
+  const layer = document.getElementById('locationFloatLayer');
+  if (layer && getComputedStyle(layer).display !== 'none' && layer.querySelector('#location-details')) {
+    openIntroFloatPanel(layer, details);
+    return;
+  }
   details.hidden = !details.hidden;
-  btn.setAttribute('aria-pressed', String(!details.hidden));
-  btn.title = details.hidden ? 'Show details' : 'Hide details';
+  setIntroDetailsToggle(!details.hidden);
+}
+function setIntroDetailsToggle(shown) {
+  const btn = document.getElementById('introDetailsToggle');
+  btn.setAttribute('aria-pressed', String(shown));
+  btn.title = shown ? 'Hide details' : 'Show details';
+}
+function openIntroFloatPanel(layer, details) {
+  const panel = document.createElement('div');
+  panel.id = 'introFloatPanel';
+  panel.innerHTML = `<button type="button" class="intro-float-close" title="Close" aria-label="Close"><span class="material-icons">close</span></button>`;
+  panel.querySelector('.intro-float-close').addEventListener('click', closeIntroFloatPanel);
+  // Moved, not copied, so the backend status keeps updating. Remembers whether it was shown under the title.
+  introFloat = { panel, details, wasHidden: details.hidden, title: null };
+  details.hidden = false;
+  panel.appendChild(details);
+  keepIntroFloatPanel(layer);
+  setIntroDetailsToggle(true);
+  // map.js re-renders the floating details (and sets the title) on each tour stop, so the panel and title
+  // are put back after each change. Closes when the layer hides (leaving Full Screen or clearing the location).
+  introFloat.watch = new MutationObserver(() => keepIntroFloatPanel(layer));
+  introFloat.watch.observe(layer, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+}
+function keepIntroFloatPanel(layer) {
+  if (!introFloat) return;
+  if (getComputedStyle(layer).display === 'none') {
+    closeIntroFloatPanel();
+    return;
+  }
+  const content = layer.querySelector('#location-details');
+  if (content && introFloat.panel.parentNode !== content.parentNode) {
+    content.after(introFloat.panel); // over #location-details, in .location-content
+  }
+  const title = layer.querySelector('.location-title');
+  if (title && title.textContent !== 'About Engine') {
+    introFloat.title = title.textContent;
+    title.textContent = 'About Engine';
+  }
+}
+// Returns #introDetails under the title, as it was before the panel opened, and the location's title
+function closeIntroFloatPanel() {
+  if (!introFloat) return;
+  const { panel, details, wasHidden, title: savedTitle, watch } = introFloat;
+  introFloat = null;
+  if (watch) watch.disconnect();
+  const title = document.querySelector('#locationFloatLayer .location-title');
+  if (title && savedTitle !== null && title.textContent === 'About Engine') title.textContent = savedTitle;
+  const titleRow = document.querySelector('#aeHeader .ae-title-row');
+  if (titleRow) {
+    details.hidden = wasHidden;
+    titleRow.after(details);
+  }
+  panel.remove();
+  setIntroDetailsToggle(!details.hidden);
 }
 
 // Reveal or hide the Orchestration panel intro
@@ -450,7 +515,7 @@ function setupTeamMenuIn(wrapId) {
 </head>
 
 <body>
-<div class="content contentpadding" style="padding-top:30px; max-width:1600px">
+<div class="content contentpadding" style="max-width:1600px">
 
   <!-- Page header — content populated from config.yaml, inline fallback shown instantly. Hidden in print layouts. -->
   <div id="aeHeader" style="margin-bottom:24px">
@@ -466,7 +531,8 @@ function setupTeamMenuIn(wrapId) {
         </button>
         <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
       </div>
-      <!-- Upper right: Create Team first, then the map print/download icons, which team/js/map.js appends to #upperRightIcons -->
+      <!-- Upper right, in display order: Create Team, the map print/download icons (team/js/map.js inserts them
+           before the data-after-print-icons element), then #localView, #introDetailsToggle and #tourPlayButton -->
       <div class="ae-upper-right">
         <div id="upperRightIcons">
           <!-- Create Team menu — localhost only. Under 750px wide, #aeTeamIconTrigger replaces #aeTeamTrigger. -->
@@ -479,17 +545,19 @@ function setupTeamMenuIn(wrapId) {
             </button>
             <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
           </div>
+          <button type="button" id="localView" data-after-print-icons title="Hide local-only items" aria-pressed="false" style="display:none">
+            <span class="material-icons">visibility</span>
+          </button>
+          <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
+            <span class="material-icons">info</span>
+          </button>
+          <!-- Tour play/pause, rightmost. Shares "Start Tour" (syncTourPlayButtons in localsite.js).
+               Starting the tour here also puts the browser and the detail map in Full Screen (setupTourPlayFullScreen in js/app.js),
+               and data-tour-hash adds detailfull=true to the hash with the tour's first stop, so a reload returns to Full Screen. -->
+          <button type="button" id="tourPlayButton" class="tour-play-button" data-tour-panel="locationDetails" data-tour-hash="detailfull=true" title="Start Tour" aria-pressed="false">
+            <span class="material-icons">play_arrow</span>
+          </button>
         </div>
-        <button type="button" id="localView" title="Hide local-only items" aria-pressed="false" style="display:none">
-          <span class="material-icons">visibility</span>
-        </button>
-        <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
-          <span class="material-icons">info</span>
-        </button>
-        <!-- Tour play/pause, rightmost. Shares "Start Tour" (syncTourPlayButtons in localsite.js). -->
-        <button type="button" id="tourPlayButton" class="tour-play-button" data-tour-panel="locationDetails" title="Start Tour" aria-pressed="false">
-          <span class="material-icons">play_arrow</span>
-        </button>
       </div>
     </div>
     <!-- Subtitle, API link and backend status — hidden until #introDetailsToggle is clicked -->

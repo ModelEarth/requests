@@ -1804,6 +1804,152 @@ class ArtsEngine {
   }
 }
 
+// Layout classes from the elements' own widths rather than the viewport's (@media), so they also apply
+// when the page is narrowed by Half Screen. A ResizeObserver instead of CSS container queries, since
+// container-type on these would trap the fixed-position popups and full screen views inside them and
+// put the header's dropdown menus in a stacking context beneath the map.
+//   #aeHeader.ae-header-compact (under 750px): the icon-only Create Team button replaces the labeled one
+//   #aeHeader.ae-header-narrow (under 680px): the upper right icons drop under the title, aligned left
+//   .ae-container.ae-one-column (under 700px): one column
+function setupEngineWidthClasses() {
+  const rules = [
+    { selector: '#aeHeader', className: 'ae-header-compact', maxWidth: 750 },
+    { selector: '#aeHeader', className: 'ae-header-narrow', maxWidth: 680 },
+    { selector: '.ae-container', className: 'ae-one-column', maxWidth: 700 }
+  ];
+  if (typeof ResizeObserver === 'undefined') return;
+  const observer = new ResizeObserver(entries => {
+    entries.forEach(entry => {
+      rules.filter(r => entry.target.matches(r.selector)).forEach(rule => {
+        entry.target.classList.toggle(rule.className, entry.contentRect.width < rule.maxWidth);
+      });
+    });
+  });
+  [...new Set(rules.map(r => r.selector))].forEach(selector => {
+    if (typeof waitForElm === 'function') {
+      waitForElm(selector).then(el => observer.observe(el));
+    } else {
+      const el = document.querySelector(selector);
+      if (el) observer.observe(el);
+    }
+  });
+}
+setupEngineWidthClasses();
+
+// Starting the tour from #tourPlayButton in the header also puts the browser in full screen, and the
+// detail map (where the tour glides) in Full Screen right away, then positions the top of the window at the bottom of the header
+// (#main-header): the map fills the window, with the top of the content under it (the title row and
+// these icons) in view at the bottom.
+// Runs before localsite's document-level click handler starts the tour, so isPlaying is still false.
+function setupTourPlayFullScreen() {
+  const goFullScreen = () => {
+    const app = window.listingsApp;
+    if (!app || typeof app.toggleMapScreen !== 'function') return;
+    if (app.getMapScreen('detail') !== 'full') {
+      app.toggleMapScreen('detail', 'full');
+    }
+    // Once the header has loaded, jump (no smooth scroll) so the page starts at the header's bottom.
+    // In Full Screen the header isn't sticky and keeps its height (widget.css), so it stays out of view.
+    const placeBelowHeader = (header) => {
+      window.scrollTo({ top: header.offsetHeight, behavior: 'instant' });
+    };
+    if (typeof waitForElm === 'function') {
+      waitForElm('#main-header').then(placeBelowHeader);
+    } else {
+      const header = document.getElementById('main-header');
+      if (header) placeBelowHeader(header);
+    }
+  };
+  // Browser full screen needs a user gesture, so it's requested within a click or key press
+  const browserFullScreen = () => {
+    const page = document.documentElement;
+    if (!document.fullscreenElement && page.requestFullscreen) {
+      page.requestFullscreen().catch(() => {}); // declined, or not allowed in an iframe
+    }
+  };
+  // No waiting on the tour's first stop: Full Screen as soon as the detail map's wrapper exists
+  const mapFullScreen = () => {
+    if (typeof onElmReady === 'function') {
+      onElmReady('#detailmapWrapper', goFullScreen);
+    } else {
+      goFullScreen();
+    }
+  };
+  const bind = (btn) => {
+    btn.addEventListener('click', () => {
+      if (window.tourState && window.tourState.isPlaying) return; // pausing
+      browserFullScreen(); // before any waiting, while the click still counts as the gesture
+      mapFullScreen();
+    });
+  };
+  if (typeof onElmReady === 'function') {
+    onElmReady('#tourPlayButton', bind);
+  } else {
+    const btn = document.getElementById('tourPlayButton');
+    if (btn) bind(btn);
+  }
+
+  // Reload with detailfull=true (sent with the tour's first stop by #tourPlayButton's data-tour-hash):
+  // the detail map returns to Full Screen right away. Browsers only allow full screen from a user
+  // gesture, so the browser expands on the first click or key press after the reload.
+  const hash = typeof getHash === 'function' ? getHash() : {};
+  if (hash.detailfull === 'true') {
+    mapFullScreen();
+    const onGesture = (e) => {
+      if (e.type === 'keydown' && e.key === 'Escape') return; // Escape leaves Full Screen
+      document.removeEventListener('pointerdown', onGesture, true);
+      document.removeEventListener('keydown', onGesture, true);
+      if (getHash().detailfull === 'true') browserFullScreen();
+    };
+    document.addEventListener('pointerdown', onGesture, true);
+    document.addEventListener('keydown', onGesture, true);
+  }
+
+  // Leaving Full Screen (the map menu or Escape) removes detailfull, so a reload stays out of it.
+  // team/js/map.js sets body.map-fullscreen-active while a map is in Full Screen.
+  let wasFull = document.body.classList.contains('map-fullscreen-active');
+  new MutationObserver(() => {
+    const isFull = document.body.classList.contains('map-fullscreen-active');
+    if (wasFull && !isFull && typeof getHash === 'function' && getHash().detailfull) {
+      goHash({ detailfull: '' });
+    }
+    wasFull = isFull;
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+}
+setupTourPlayFullScreen();
+
+// Popups from the #upperRightIcons buttons (the Create Team menu, the map's print and download popups)
+// and the title's engine menu (#aeModeWrap) open above their button when it's near the bottom of the window
+// and there isn't room for them below.
+// Watches the popups' hidden attribute and display style, since print-download.js stops the click's propagation.
+function setupHeaderPopupFlip() {
+  const gap = 6;
+  const place = (popup) => {
+    popup.classList.remove('ae-popup-above');
+    if (popup.hidden || getComputedStyle(popup).display === 'none') return;
+    const button = popup.parentElement.getBoundingClientRect();
+    const roomBelow = window.innerHeight - button.bottom - gap;
+    const roomAbove = button.top - gap;
+    popup.classList.toggle('ae-popup-above', popup.offsetHeight > roomBelow && roomAbove > roomBelow);
+  };
+  const bind = (container) => {
+    new MutationObserver((mutations) => {
+      mutations.forEach(m => {
+        if (m.target.matches('.ae-mode-menu, .print-download-popup')) place(m.target);
+      });
+    }).observe(container, { subtree: true, attributes: true, attributeFilter: ['hidden', 'style'] });
+  };
+  ['#upperRightIcons', '#aeModeWrap'].forEach(selector => {
+    if (typeof onElmReady === 'function') {
+      onElmReady(selector, bind);
+    } else {
+      const el = document.querySelector(selector);
+      if (el) bind(el);
+    }
+  });
+}
+setupHeaderPopupFlip();
+
 // Initialize
 let artsEngine;
 if (document.readyState === 'loading') {

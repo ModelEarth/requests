@@ -30,6 +30,7 @@
 
 #ae-title {
   cursor: pointer;
+  line-height: 1;
 }
 
 .ae-mode-trigger.ae-title-arrow {
@@ -463,16 +464,16 @@
   container-type: inline-size;
 }
 
-@media (max-width: 767px) {
-  /* One-column grid rather than a column flexbox: as a column flex item, .ae-right's
-     container-type (inline-size) made Chrome size it taller than its content, leaving blank space below */
-  .ae-container {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .ae-right {
-    order: -1; /* GitHub token widget first on mobile */
-  }
+/* One column when .ae-container is under 700px wide, including in Half Screen
+   (.ae-one-column is set by setupEngineWidthClasses in js/app.js).
+   One-column grid rather than a column flexbox: as a column flex item, .ae-right's
+   container-type (inline-size) made Chrome size it taller than its content, leaving blank space below */
+.ae-container.ae-one-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.ae-one-column > .ae-right {
+  order: -1; /* GitHub token widget first on mobile */
 }
 
 /* =========================================================
@@ -1766,7 +1767,8 @@ github-repo-modal {
   z-index: 10001 !important;
 }
 
-/* Upper right of the title row: #upperRightIcons (map print/download icons) + #localView */
+/* Upper right of the title row: #upperRightIcons (Create Team, map print/download icons, #localView,
+   #introDetailsToggle and #tourPlayButton) */
 .ae-upper-right {
   display: flex;
   align-items: center;
@@ -1778,7 +1780,7 @@ github-repo-modal {
   align-items: center;
 }
 
-/* Create Team, first in #upperRightIcons. Under 750px wide the icon-only button replaces it.
+/* Create Team, first in #upperRightIcons. Under 750px of header width the icon-only button replaces it.
    Scoped to #upperRightIcons to outrank the shared #localView/#aeTeamIconTrigger button rule below. */
 #upperRightIcons #aeTeamWrap {
   margin: 0 5px;
@@ -1788,7 +1790,8 @@ github-repo-modal {
   margin: 0;
 }
 
-/* Tour play/pause: rightmost in .ae-upper-right, after #introDetailsToggle.
+
+/* Tour play/pause: rightmost in #upperRightIcons, after #introDetailsToggle.
    Green play, orange pause while the tour plays (.playing, set by syncTourPlayButtons in localsite.js). */
 .ae-upper-right #tourPlayButton {
   background: #2e9e4f;
@@ -1808,52 +1811,108 @@ github-repo-modal {
   background: #d27a00;
   border-color: #d27a00;
 }
-@media (max-width: 749.98px) {
-  #upperRightIcons #aeTeamTrigger {
-    display: none;
-  }
-  #upperRightIcons #aeTeamIconTrigger {
-    display: inline-flex;
-  }
+/* When #aeHeader is under 750px wide (including in Half Screen), the icon-only Create Team button
+   replaces the labeled one. .ae-header-compact is set by setupEngineWidthClasses in js/app.js. */
+.ae-header-compact #upperRightIcons #aeTeamTrigger {
+  display: none;
+}
+.ae-header-compact #upperRightIcons #aeTeamIconTrigger {
+  display: inline-flex;
 }
 
-/* Under 680px wide the icons drop to their own line under the title (#aeModeWrap), aligned left */
-@media (max-width: 679.98px) {
-  .ae-upper-right {
-    flex-basis: 100%;
-    margin-left: -5px; /* lines the first icon's edge up with the title, past its 5px side margin */
-  }
-  #upperRightIcons {
-    justify-content: flex-start;
-  }
-  /* Icon buttons 30% bigger on the left: 32px to 42px, 18px icons to 23px.
-     Prefixed with .ae-upper-right to outrank the #localView rules later in this file. */
-  .ae-upper-right .print-download-icon,
-  .ae-upper-right #localView,
-  .ae-upper-right #introDetailsToggle,
-  #upperRightIcons #aeTeamIconTrigger,
-  .ae-upper-right #tourPlayButton {
-    width: 42px;
-    height: 42px;
-    padding: 8px;
-  }
-  .ae-upper-right .print-download-icon svg {
-    width: 23px;
-    height: 23px;
-  }
-  .ae-upper-right .print-download-icon .material-icons,
-  .ae-upper-right #localView .material-icons,
-  .ae-upper-right #introDetailsToggle .material-icons,
-  .ae-upper-right #aeTeamIconTrigger .material-icons,
-  .ae-upper-right #tourPlayButton .material-icons {
-    font-size: 23px;
-  }
-  /* Popups open rightward from their icons, since right-aligned ones would run off the left edge */
-  .ae-upper-right .ae-mode-menu,
-  .ae-upper-right .print-download-popup {
-    left: 0;
-    right: auto;
-  }
+/* When #aeHeader is under 680px wide (including in Half Screen), the icons drop to their own line under
+   the title (#aeModeWrap), aligned left. .ae-header-narrow is set by setupEngineWidthClasses in js/app.js. */
+.ae-header-narrow .ae-upper-right {
+  flex-basis: 100%;
+  margin-left: -5px; /* lines the first icon's edge up with the title, past its 5px side margin */
+}
+.ae-header-narrow #upperRightIcons {
+  justify-content: flex-start;
+}
+/* Icon buttons 30% bigger on the left: 32px to 42px, 18px icons to 23px.
+   Prefixed with .ae-upper-right to outrank the #localView rules later in this file. */
+.ae-header-narrow .ae-upper-right .print-download-icon,
+.ae-header-narrow .ae-upper-right #localView,
+.ae-header-narrow .ae-upper-right #introDetailsToggle,
+.ae-header-narrow #upperRightIcons #aeTeamIconTrigger,
+.ae-header-narrow .ae-upper-right #tourPlayButton {
+  width: 42px;
+  height: 42px;
+  padding: 8px;
+}
+.ae-header-narrow .ae-upper-right .print-download-icon svg {
+  width: 23px;
+  height: 23px;
+}
+.ae-header-narrow .ae-upper-right .print-download-icon .material-icons,
+.ae-header-narrow .ae-upper-right #localView .material-icons,
+.ae-header-narrow .ae-upper-right #introDetailsToggle .material-icons,
+.ae-header-narrow .ae-upper-right #aeTeamIconTrigger .material-icons,
+.ae-header-narrow .ae-upper-right #tourPlayButton .material-icons {
+  font-size: 23px;
+}
+/* Popups open rightward from their icons, since right-aligned ones would run off the left edge */
+.ae-header-narrow .ae-upper-right .ae-mode-menu,
+.ae-header-narrow .ae-upper-right .print-download-popup {
+  left: 0;
+  right: auto;
+}
+/* Opens above its button when the button is near the bottom of the window
+   (.ae-popup-above, set by setupHeaderPopupFlip in js/app.js) */
+#upperRightIcons .ae-popup-above,
+#aeModeWrap .ae-popup-above {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* #introDetails shown over #location-details in the floating location details (#locationFloatLayer) while a
+   Full Screen map has a location. Opened by #introDetailsToggle (openIntroFloatPanel in index.html).
+   Covers .location-content (the details' map section is hidden while floating), below the title. */
+.location-float .location-content:has(> #introFloatPanel) {
+  position: relative;
+  min-height: 140px;
+}
+#introFloatPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: auto;
+  padding: 0 40px 0 0;
+  background: #f8fafc;
+}
+.dark #introFloatPanel {
+  background: #1e293b;
+}
+.intro-float-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  color: #475569;
+  cursor: pointer;
+}
+.intro-float-close:hover {
+  background: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+.intro-float-close .material-icons {
+  font-size: 18px;
+}
+.dark .intro-float-close {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.dark .intro-float-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 /* Matches .print-download-icon from team/js/print-download.js */
