@@ -6,6 +6,29 @@
    Title row — engine mode menu (Project, Arts, Activities, Design) at far right
    ========================================================= */
 
+/* Full Screen map (body.map-fullscreen-active, set by toggleMapScreen in team/js/map.js):
+   less space above the page content than .contentpadding's 25px */
+body.map-fullscreen-active #engineContent {
+  padding-top: 20px;
+}
+
+/* Image at the start of #ae-subtitle (AE_SUBTITLE_IMAGE in index.html), full width above the text */
+.ae-subtitle-image {
+  display: block;
+  width: 100%;
+  margin: 4px 0 8px;
+}
+.ae-subtitle-image img {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  border-radius: 12px;
+}
+.dark .ae-subtitle-image img {
+  opacity: 0.9;
+}
+
 .ae-title-row {
   display: flex;
   flex-wrap: wrap;
@@ -1571,6 +1594,12 @@
   white-space: normal;
 }
 
+/* "more" revealed: the start instruction replaces "Backend offline on port …" (toggleBackendStartDetail in index.html).
+   The label returns once the backend is online, which hides #backendStartInstruction. */
+.ae-backend-status:has(#backendStartInstruction:not([hidden]) #backendStartDetail:not([hidden])) #backendLabel {
+  display: none;
+}
+
 .ae-backend-dot {
   display: inline-block;
   width: 8px;
@@ -1865,28 +1894,25 @@ github-repo-modal {
   bottom: calc(100% + 6px);
 }
 
-/* #introDetails shown over #location-details in the floating location details (#locationFloatLayer) while a
-   Full Screen map has a location. Opened by #introDetailsToggle (openIntroFloatPanel in index.html).
-   Covers .location-content (the details' map section is hidden while floating), below the title. */
-.location-float .location-content:has(> #introFloatPanel) {
-  position: relative;
-  min-height: 140px;
+/* #introDetails shown in place of #location-details in the floating location details (#locationFloatLayer)
+   while a Full Screen map has a location. Opened by #introDetailsToggle (openIntroFloatPanel in index.html).
+   #location-details is hidden while it's open, so the panel's own height (with the full-width image in
+   #ae-subtitle) sets the box's height, up to the window less the header and the box's 60px gap below it. */
+.location-float .location-content:has(> #introFloatPanel) > #location-details {
+  display: none;
 }
+.location-float:has(#introFloatPanel) {
+  max-height: calc(100vh - var(--headerbar-offset, 0px) - 80px);
+}
+/* The close X floats over the panel's upper right corner (over the image), not in a column of its own */
 #introFloatPanel {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  overflow: auto;
-  padding: 0 40px 0 0;
-  background: #f8fafc;
-}
-.dark #introFloatPanel {
-  background: #1e293b;
+  position: relative;
 }
 .intro-float-close {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1895,23 +1921,24 @@ github-repo-modal {
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
   color: #475569;
   cursor: pointer;
 }
 .intro-float-close:hover {
-  background: rgba(15, 23, 42, 0.16);
+  background: #fff;
   color: #0f172a;
 }
 .intro-float-close .material-icons {
   font-size: 18px;
 }
 .dark .intro-float-close {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.85);
   color: #cbd5e1;
 }
 .dark .intro-float-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #1e293b;
   color: #fff;
 }
 

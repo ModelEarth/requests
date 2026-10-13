@@ -1684,7 +1684,7 @@ class ArtsEngine {
     if (label) label.textContent = `Backend offline on port ${this.getBackendPort()}.`;
     // Full explanation sits under the "more" toggle, above the "start art" instruction
     const offlineNote = document.getElementById('backendOfflineNote');
-    if (offlineNote) offlineNote.innerHTML = `<br>The ${this.getEngineTitle()} only runs on local computers during our development phase. Turn on the Engine Rust backend locally on port ${this.getBackendPort()} using the steps in the <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>`;
+    if (offlineNote) offlineNote.innerHTML = `Turn on the Engine Rust backend locally on port ${this.getBackendPort()} using the steps in the <a href="/team/setup/" title="Local Webroot Startup">Local Webroot Startup</a>`;
     // If saved provider has no browser key, fall back to env
     const savedProv = this.loadPref('provider', 'google');
     if (!this._configuredProviders.has(savedProv) && savedProv !== 'env') {

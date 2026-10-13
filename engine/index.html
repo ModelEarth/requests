@@ -57,7 +57,7 @@ window.AE_CONFIG_PROMISE = (async function applyConfig() {
 
   // Engine modes — selected with the #mode= hash param (Project, key "work", is the default).
   // config.yaml title/subtitle/icon override the Project mode defaults.
-  const sources = 'via xAI, Claude, Gemini, OpenAI APIs';
+  const sources = 'via Model Context Protocol (MCP)';
   window.AE_MODES = {
     work:   { label: 'Projects', name: 'Project', title: cfg.title || 'Project Engine', icon: cfg.icon || 'tips_and_updates', flow: 'Workflow',        node: 'Project',
               subtitle: cfg.subtitle || `Text, image &amp; video generation for projects ${sources}` },
@@ -138,6 +138,11 @@ function getEngineIconHTML(icon) {
   }
   return `<span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">${icon}</span>`;
 }
+// Illustrated Atlanta map at the start of #ae-subtitle, full width above its text. Opens in a new tab.
+// Lazy, so it isn't fetched while #introDetails is hidden.
+const AE_SUBTITLE_IMAGE = `<a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map">` +
+  `<img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a>`;
+
 function applyEngineMode() {
   if (!window.AE_MODES) return;
   const modes = getEngineModes();
@@ -152,7 +157,7 @@ function applyEngineMode() {
     titleEl.innerHTML = getEngineIconHTML(m.icon) + title.replace(/ Engine$/, ' <span class="darktext">Engine</span>');
   }
   const subtitleEl = document.getElementById('ae-subtitle');
-  if (subtitleEl) subtitleEl.innerHTML = m.subtitle;
+  if (subtitleEl) subtitleEl.innerHTML = AE_SUBTITLE_IMAGE + m.subtitle;
 
   // Flow panel title follows the primary mode
   document.querySelectorAll('.ae-flow-title').forEach(el => { el.textContent = m.flow; });
@@ -230,12 +235,14 @@ function setupEngineModeMenu() {
   applyEngineMode();
 }
 
-// Reveal or fold the "start art" instruction under the backend status
+// Reveal or fold the backend start note (#backendOfflineNote) under the backend status.
+// "more" shows while it's folded; once revealed, "less" is at the end of #backendOfflineNote, and
+// "Backend offline on port …" (#backendLabel) is hidden while the backend is offline (css/app.css).
 function toggleBackendStartDetail() {
   const detail = document.getElementById('backendStartDetail');
   const link = document.getElementById('backendStartMore');
   detail.hidden = !detail.hidden;
-  link.textContent = detail.hidden ? 'more' : 'less';
+  link.hidden = !detail.hidden;
 }
 
 // While a listing's detail is shown (#id= or #detail=): title becomes "Location" and #pageMap hides
@@ -281,8 +288,8 @@ onElmReady('#localView', (btn) => {
 
 // #introDetailsToggle — reveal or hide the subtitle, API link and backend status under the title.
 // While the location details float over a Full Screen map (#locationFloatLayer, team/js/map.js), they show
-// in #introFloatPanel instead, covering #location-details, with "About Engine" as the .location-title
-// and a close X in the panel's upper right.
+// in #introFloatPanel instead, with #location-details hidden while it's open (css/app.css), "Explore"
+// as the .location-title and a close X in the panel's upper right.
 let introFloat = null; // { panel, details, wasHidden, title, watch } while #introFloatPanel is open
 function toggleIntroDetails() {
   const details = document.getElementById('introDetails');
@@ -329,12 +336,12 @@ function keepIntroFloatPanel(layer) {
   }
   const content = layer.querySelector('#location-details');
   if (content && introFloat.panel.parentNode !== content.parentNode) {
-    content.after(introFloat.panel); // over #location-details, in .location-content
+    content.after(introFloat.panel); // in place of #location-details, in .location-content
   }
   const title = layer.querySelector('.location-title');
-  if (title && title.textContent !== 'About Engine') {
+  if (title && title.textContent !== 'Explore') {
     introFloat.title = title.textContent;
-    title.textContent = 'About Engine';
+    title.textContent = 'Explore';
   }
 }
 // Returns #introDetails under the title, as it was before the panel opened, and the location's title
@@ -344,7 +351,7 @@ function closeIntroFloatPanel() {
   introFloat = null;
   if (watch) watch.disconnect();
   const title = document.querySelector('#locationFloatLayer .location-title');
-  if (title && savedTitle !== null && title.textContent === 'About Engine') title.textContent = savedTitle;
+  if (title && savedTitle !== null && title.textContent === 'Explore') title.textContent = savedTitle;
   const titleRow = document.querySelector('#aeHeader .ae-title-row');
   if (titleRow) {
     details.hidden = wasHidden;
@@ -515,7 +522,7 @@ function setupTeamMenuIn(wrapId) {
 </head>
 
 <body>
-<div class="content contentpadding" style="max-width:1600px">
+<div id="engineContent" class="content contentpadding" style="max-width:1600px">
 
   <!-- Page header — content populated from config.yaml, inline fallback shown instantly. Hidden in print layouts. -->
   <div id="aeHeader" style="margin-bottom:24px">
@@ -548,9 +555,12 @@ function setupTeamMenuIn(wrapId) {
           <button type="button" id="localView" data-after-print-icons title="Hide local-only items" aria-pressed="false" style="display:none">
             <span class="material-icons">visibility</span>
           </button>
-          <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
-            <span class="material-icons">info</span>
-          </button>
+          <!-- Details toggle — localhost only (.local, shown by localsite.js) -->
+          <div class="local" style="display:none">
+            <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
+              <span class="material-icons">info</span>
+            </button>
+          </div>
           <!-- Tour play/pause, rightmost. Shares "Start Tour" (syncTourPlayButtons in localsite.js).
                Starting the tour here also puts the browser and the detail map in Full Screen (setupTourPlayFullScreen in js/app.js),
                and data-tour-hash adds detailfull=true to the hash with the tour's first stop, so a reload returns to Full Screen. -->
@@ -563,21 +573,25 @@ function setupTeamMenuIn(wrapId) {
     <!-- Subtitle, API link and backend status — hidden until #introDetailsToggle is clicked -->
     <div id="introDetails" hidden>
     <span style="margin:0; color:#888; font-size:0.95rem" id="ae-subtitle">
-      Text, image &amp; video generation for projects via xAI, Claude, Gemini, OpenAI APIs <!-- · Storyboard Builder -->
+      <a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map"><img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a>
+      Text, image &amp; video generation for projects via Model Context Protocol (MCP) <!-- · Storyboard Builder -->
     </span>
     - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
 
     <!-- Backend intro — shown only when #mode= includes art -->
     <div id="artIntro" class="ae-arts-only" style="display:none">
       <div class="ae-backend-status" style="margin-top:8px">
-        <span style="font-size:0.95rem;color:#888;">
-          <span id="backendLabel">Checking backend on port 8082…</span>
-          <!-- Start instruction, folded behind "more". app.js hides this span when the backend is online. -->
-          <span id="backendStartInstruction">
-            <a href="#" id="backendStartMore" onclick="event.preventDefault();toggleBackendStartDetail()">more</a>
-            <span id="backendStartDetail" hidden><span id="backendOfflineNote"></span><br><strong>Run "start art" on your localhost webroot via CLI commands to start the Rust API on port 8082</strong></span>
+        <!-- Backend status text — localhost only (.local, shown by localsite.js) -->
+        <div class="local" style="display:none">
+          <span style="font-size:0.95rem;color:#888;">
+            <span id="backendLabel">Checking backend on port 8082…</span>
+            <!-- Start instruction, folded behind "more". app.js hides this span when the backend is online. -->
+            <span id="backendStartInstruction">
+              <a href="#" id="backendStartMore" onclick="event.preventDefault();toggleBackendStartDetail()">more</a>
+              <span id="backendStartDetail" hidden><span id="backendOfflineNote"></span> <a href="#" id="backendStartLess" onclick="event.preventDefault();toggleBackendStartDetail()">less</a></span>
+            </span>
           </span>
-        </span>
+        </div>
       </div>
     </div>
     </div><!-- /introDetails -->
