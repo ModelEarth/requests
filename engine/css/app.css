@@ -12,7 +12,7 @@ body.map-fullscreen-active #engineContent {
   padding-top: 20px;
 }
 
-/* Image at the start of #ae-subtitle (AE_SUBTITLE_IMAGE in index.html), full width above the text */
+/* Image at the start of #ae-subtitle (AE_SUBTITLE_IMAGE in index.html, commented out for now), full width above the text */
 .ae-subtitle-image {
   display: block;
   width: 100%;
@@ -21,7 +21,7 @@ body.map-fullscreen-active #engineContent {
 .ae-subtitle-image img {
   display: block;
   width: 100%;
-  max-width: 800px;
+  max-width: 600px;
   height: auto;
   border-radius: 12px;
 }
@@ -1896,15 +1896,15 @@ github-repo-modal {
 
 /* #introDetails shown in place of #location-details in the floating location details (#locationFloatLayer)
    while a Full Screen map has a location. Opened by #introDetailsToggle (openIntroFloatPanel in index.html).
-   #location-details is hidden while it's open, so the panel's own height (with the full-width image in
-   #ae-subtitle) sets the box's height, up to the window less the header and the box's 60px gap below it. */
+   #location-details is hidden while it's open, so the panel's own height sets the box's height,
+   up to the window less the header and the box's 60px gap below it. */
 .location-float .location-content:has(> #introFloatPanel) > #location-details {
   display: none;
 }
 .location-float:has(#introFloatPanel) {
   max-height: calc(100vh - var(--headerbar-offset, 0px) - 80px);
 }
-/* The close X floats over the panel's upper right corner (over the image), not in a column of its own */
+/* The close X floats over the panel's upper right corner, not in a column of its own */
 #introFloatPanel {
   position: relative;
 }

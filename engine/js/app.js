@@ -1697,7 +1697,7 @@ class ArtsEngine {
   }
 
   // -------------------------------------------------------------------------
-  // GitHub token widget (reuses projects/js/issues.js)
+  // GitHub token widget (reuses engine/js/projects.js)
   // -------------------------------------------------------------------------
 
   initGitHubWidget() {
@@ -1719,7 +1719,7 @@ class ArtsEngine {
   }
 
   // Move the widget's View Projects button (with its filters toggle) and project list into the Projects panel.
-  // issues.js finds both by id, so its show/hide logic still applies after the move.
+  // projects.js finds both by id, so its show/hide logic still applies after the move.
   moveProjectsToPanel() {
     if (typeof waitForElm !== 'function') return;
     waitForElm('#toggleProjectsSection').then(btn => {

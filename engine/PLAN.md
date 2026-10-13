@@ -492,5 +492,5 @@ scene,prompt,aspect_ratio,style,notes,Naics,Industry,Count
 - **api_xai Rust crate**: https://docs.rs/api_xai/latest/api_xai/
 - **FloraFauna.ai** — storyboard flowchart style reference
 - **local env file** — API keys and server config, at the path `automation/paths.yaml` points to (webroot-level, gitignored)
-- **projects/js/issues.js** — GitHub token widget (reuse `GitHubIssuesManager`)
+- **engine/js/projects.js** — GitHub token widget (reuse `GitHubIssuesManager`)
 - **projects/css/issues.css** — widget styles (include in page)

@@ -18,7 +18,7 @@ param.showsearch = "false";
 <link type="text/css" rel="stylesheet" href="css/node-canvas.css" />
 
 <script type="text/javascript" src="/localsite/js/localsite.js?showheader=true"></script>
-<script type="text/javascript" src="/projects/js/issues.js"></script>
+<script type="text/javascript" src="/engine/js/projects.js"></script>
 
 <!-- Shared GitHub / Resource-Area components (Web Components bundle) -->
 <script defer src="/chat/packages/github-components/dist/github-components.js"></script>
@@ -139,9 +139,10 @@ function getEngineIconHTML(icon) {
   return `<span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">${icon}</span>`;
 }
 // Illustrated Atlanta map at the start of #ae-subtitle, full width above its text. Opens in a new tab.
-// Lazy, so it isn't fetched while #introDetails is hidden.
-const AE_SUBTITLE_IMAGE = `<a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map">` +
-  `<img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a>`;
+// Lazy, so it isn't fetched while #introDetails is hidden. Off for now: uncomment this and the
+// AE_SUBTITLE_IMAGE line in applyEngineMode (and the image in the #ae-subtitle markup) to show it.
+// const AE_SUBTITLE_IMAGE = `<a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map">` +
+//   `<img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a>`;
 
 function applyEngineMode() {
   if (!window.AE_MODES) return;
@@ -157,7 +158,8 @@ function applyEngineMode() {
     titleEl.innerHTML = getEngineIconHTML(m.icon) + title.replace(/ Engine$/, ' <span class="darktext">Engine</span>');
   }
   const subtitleEl = document.getElementById('ae-subtitle');
-  if (subtitleEl) subtitleEl.innerHTML = AE_SUBTITLE_IMAGE + m.subtitle;
+  if (subtitleEl) subtitleEl.innerHTML = m.subtitle;
+  // if (subtitleEl) subtitleEl.innerHTML = AE_SUBTITLE_IMAGE + m.subtitle;
 
   // Flow panel title follows the primary mode
   document.querySelectorAll('.ae-flow-title').forEach(el => { el.textContent = m.flow; });
@@ -573,7 +575,7 @@ function setupTeamMenuIn(wrapId) {
     <!-- Subtitle, API link and backend status — hidden until #introDetailsToggle is clicked -->
     <div id="introDetails" hidden>
     <span style="margin:0; color:#888; font-size:0.95rem" id="ae-subtitle">
-      <a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map"><img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a>
+      <!-- <a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map"><img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a> -->
       Text, image &amp; video generation for projects via Model Context Protocol (MCP) <!-- · Storyboard Builder -->
     </span>
     - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
@@ -953,7 +955,7 @@ function setupTeamMenuIn(wrapId) {
       <!-- #pageMap is moved here from #listwidget by team/js/map.js (moveMapToCatch) -->
       <div id="mapCatch"></div>
 
-      <!-- GitHub Token Widget (projects/js/issues.js) -->
+      <!-- GitHub Token Widget (engine/js/projects.js) -->
       <div class="ae-panel">
         <h3>
           <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">hub</span>
@@ -1072,7 +1074,7 @@ function setupTeamMenuIn(wrapId) {
   var REPOS_KEY   = 'ae_selected_repos';
 
   function getStoredPAT() {
-    // Reuse the GitHub PAT that issues.js / agents.js may have stored, or
+    // Reuse the GitHub PAT that projects.js / agents.js may have stored, or
     // fall back to our own storage key.
     try {
       var aProRaw = localStorage.getItem('aPro');
