@@ -1892,8 +1892,9 @@ function setupTourPlayFullScreen() {
   // Reload with detailfull=true (sent with the tour's first stop by #tourPlayButton's data-tour-hash):
   // the detail map returns to Full Screen right away. Browsers only allow full screen from a user
   // gesture, so the browser expands on the first click or key press after the reload.
+  // Only with a location (id) to show; without one the detail map would fill the window empty.
   const hash = typeof getHash === 'function' ? getHash() : {};
-  if (hash.detailfull === 'true') {
+  if (hash.detailfull === 'true' && (hash.id || hash.detail)) {
     mapFullScreen();
     const onGesture = (e) => {
       if (e.type === 'keydown' && e.key === 'Escape') return; // Escape leaves Full Screen
