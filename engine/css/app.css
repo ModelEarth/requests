@@ -1735,7 +1735,7 @@ body.map-fullscreen-active #engineContent {
   width: auto;
 }
 
-/* <github-repo-modal> and <resource-area-selector> (chat/packages/github-components).
+/* <github-repo-modal> and <resource-area-selector> (engine/js/github-components.js).
    The bundle's Tailwind theme redefines --accent, --color-primary and --color-secondary on :root
    (injected after this stylesheet), which recolored localsite's .btn-primary/.btn-secondary page-wide,
    e.g. white text on light grey for "Edit Issue". Restore localsite's values (localsite/css/base.css)... */
