@@ -264,27 +264,66 @@ function applyLocationDetail() {
 document.addEventListener('hashChangeEvent', applyLocationDetail, false);
 document.addEventListener('DOMContentLoaded', applyLocationDetail);
 
-// #localView — hide .local and .localonly elements (overrides localsite's localhost !important rule)
+// #changeView — opens #changeViewMenu with two toggles:
+//   Local-Only: shows or hides .local and .localonly elements (overrides localsite's localhost !important rule).
+//     Listed only where localsite reveals .local elements: localhost or ?view=local.
+//   My Layout: the floating image and location details go where they were last dropped, or to their
+//     default spots when off (myLayoutOn and "mylayoutchange" in team/js/map.js, localStorage mapMyLayout).
+// The eye shows the Local-Only state: crossed out while local-only items are hidden.
 function applyLocalView(hidden) {
   document.body.classList.toggle('hideLocalView', hidden);
-  const btn = document.getElementById('localView');
-  if (!btn) return;
-  btn.setAttribute('aria-pressed', String(hidden));
-  btn.title = hidden ? 'Show local-only items' : 'Hide local-only items';
-  btn.querySelector('.material-icons').textContent = hidden ? 'visibility_off' : 'visibility';
+  const toggle = document.getElementById('localOnlyToggle');
+  if (toggle) toggle.checked = !hidden;
+  const icon = document.querySelector('#changeView .material-icons');
+  if (icon) icon.textContent = hidden ? 'visibility_off' : 'visibility';
 }
-onElmReady('#localView', (btn) => {
-  // Only useful where localsite reveals .local elements: localhost or ?view=local
+function myLayoutOn() {
+  try { return localStorage.getItem('mapMyLayout') !== '0'; } catch (e) { return true; }
+}
+onElmReady('#changeView', (btn) => {
+  const menu = document.getElementById('changeViewMenu');
+  const localToggle = document.getElementById('localOnlyToggle');
+  const layoutToggle = document.getElementById('myLayoutToggle');
+
   const localShown = location.host.indexOf('localhost') >= 0 || (window.param && param.view == 'local');
-  if (!localShown) return;
-  btn.style.display = '';
-  let hidden = false;
-  try { hidden = localStorage.getItem('ae_hideLocalView') === '1'; } catch (e) {}
-  applyLocalView(hidden);
-  btn.addEventListener('click', () => {
-    hidden = !document.body.classList.contains('hideLocalView');
-    try { localStorage.setItem('ae_hideLocalView', hidden ? '1' : '0'); } catch (e) {}
+  document.getElementById('localOnlyToggleRow').hidden = !localShown;
+  if (localShown) {
+    let hidden = false;
+    try { hidden = localStorage.getItem('ae_hideLocalView') === '1'; } catch (e) {}
     applyLocalView(hidden);
+    localToggle.addEventListener('change', () => {
+      const hide = !localToggle.checked;
+      try { localStorage.setItem('ae_hideLocalView', hide ? '1' : '0'); } catch (e) {}
+      applyLocalView(hide);
+    });
+  }
+
+  layoutToggle.checked = myLayoutOn();
+  layoutToggle.addEventListener('change', () => {
+    try { localStorage.setItem('mapMyLayout', layoutToggle.checked ? '1' : '0'); } catch (e) {}
+    document.dispatchEvent(new CustomEvent('mylayoutchange', { detail: { on: layoutToggle.checked, source: 'toggle' } }));
+  });
+  // Dropping a panel turns My Layout on (team/js/map.js)
+  document.addEventListener('mylayoutchange', (event) => {
+    if (event.detail && event.detail.source === 'drag') layoutToggle.checked = Boolean(event.detail.on);
+  });
+
+  const setOpen = (open) => {
+    menu.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  };
+  btn.addEventListener('click', () => {
+    layoutToggle.checked = myLayoutOn();
+    setOpen(menu.hidden);
+  });
+  document.addEventListener('click', (event) => {
+    if (!menu.hidden && !btn.parentElement.contains(event.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !menu.hidden) {
+      setOpen(false);
+      btn.focus();
+    }
   });
 });
 
@@ -541,7 +580,7 @@ function setupTeamMenuIn(wrapId) {
         <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
       </div>
       <!-- Upper right, in display order: Create Team, the map print/download icons (team/js/map.js inserts them
-           before the data-after-print-icons element), then #localView, #introDetailsToggle and #tourPlayButton -->
+           before the data-after-print-icons element), then #changeView, #introDetailsToggle and #tourPlayButton -->
       <div class="ae-upper-right">
         <div id="upperRightIcons">
           <!-- Create Team menu — localhost only. Under 750px wide, #aeTeamIconTrigger replaces #aeTeamTrigger. -->
@@ -554,9 +593,22 @@ function setupTeamMenuIn(wrapId) {
             </button>
             <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
           </div>
-          <button type="button" id="localView" data-after-print-icons title="Hide local-only items" aria-pressed="false" style="display:none">
-            <span class="material-icons">visibility</span>
-          </button>
+          <!-- Change view: Local-Only (localhost or ?view=local) and My Layout toggles -->
+          <div class="ae-mode-wrap" id="changeViewWrap" data-after-print-icons>
+            <button type="button" id="changeView" title="Change view" aria-haspopup="true" aria-expanded="false" aria-controls="changeViewMenu">
+              <span class="material-icons">visibility</span>
+            </button>
+            <div class="ae-mode-menu change-view-menu" id="changeViewMenu" hidden>
+              <label class="change-view-toggle" id="localOnlyToggleRow" hidden>
+                <span class="change-view-name">Local-Only</span>
+                <span class="switch"><input type="checkbox" id="localOnlyToggle" checked><span class="slider round"></span></span>
+              </label>
+              <label class="change-view-toggle">
+                <span class="change-view-name">My Layout</span>
+                <span class="switch"><input type="checkbox" id="myLayoutToggle" checked><span class="slider round"></span></span>
+              </label>
+            </div>
+          </div>
           <!-- Details toggle — localhost only (.local, shown by localsite.js) -->
           <div class="local" style="display:none">
             <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">

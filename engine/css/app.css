@@ -111,7 +111,8 @@ body.map-fullscreen-active #engineContent {
 
 .ae-mode-menu {
   position: absolute;
-  /* Above the map's Leaflet layers (400) and controls (1000), below modals (10000) */
+  /* Above the map's Leaflet layers (400) and controls (1000) and its floating image and location details
+     (999 and 998, team/css/widget.css), below modals (10000) */
   z-index: 1100;
   right: 0;
   top: calc(100% + 6px);
@@ -329,7 +330,7 @@ body.map-fullscreen-active #engineContent {
 
 .sp-model-menu {
   position: absolute;
-  z-index: 100;
+  z-index: 1100; /* over the floating image and location details (team/css/widget.css) */
   left: 0;
   top: calc(100% + 6px);
   width: min(340px, 92vw);
@@ -1796,7 +1797,7 @@ github-repo-modal {
   z-index: 10001 !important;
 }
 
-/* Upper right of the title row: #upperRightIcons (Create Team, map print/download icons, #localView,
+/* Upper right of the title row: #upperRightIcons (Create Team, map print/download icons, #changeView,
    #introDetailsToggle and #tourPlayButton) */
 .ae-upper-right {
   display: flex;
@@ -1810,7 +1811,7 @@ github-repo-modal {
 }
 
 /* Create Team, first in #upperRightIcons. Under 750px of header width the icon-only button replaces it.
-   Scoped to #upperRightIcons to outrank the shared #localView/#aeTeamIconTrigger button rule below. */
+   Scoped to #upperRightIcons to outrank the shared #changeView/#aeTeamIconTrigger button rule below. */
 #upperRightIcons #aeTeamWrap {
   margin: 0 5px;
 }
@@ -1859,9 +1860,9 @@ github-repo-modal {
   justify-content: flex-start;
 }
 /* Icon buttons 30% bigger on the left: 32px to 42px, 18px icons to 23px.
-   Prefixed with .ae-upper-right to outrank the #localView rules later in this file. */
+   Prefixed with .ae-upper-right to outrank the #changeView rules later in this file. */
 .ae-header-narrow .ae-upper-right .print-download-icon,
-.ae-header-narrow .ae-upper-right #localView,
+.ae-header-narrow .ae-upper-right #changeView,
 .ae-header-narrow .ae-upper-right #introDetailsToggle,
 .ae-header-narrow #upperRightIcons #aeTeamIconTrigger,
 .ae-header-narrow .ae-upper-right #tourPlayButton {
@@ -1874,7 +1875,7 @@ github-repo-modal {
   height: 23px;
 }
 .ae-header-narrow .ae-upper-right .print-download-icon .material-icons,
-.ae-header-narrow .ae-upper-right #localView .material-icons,
+.ae-header-narrow .ae-upper-right #changeView .material-icons,
 .ae-header-narrow .ae-upper-right #introDetailsToggle .material-icons,
 .ae-header-narrow .ae-upper-right #aeTeamIconTrigger .material-icons,
 .ae-header-narrow .ae-upper-right #tourPlayButton .material-icons {
@@ -1943,7 +1944,7 @@ github-repo-modal {
 }
 
 /* Matches .print-download-icon from team/js/print-download.js */
-#localView, #aeTeamIconTrigger, #introDetailsToggle, #tourPlayButton {
+#changeView, #aeTeamIconTrigger, #introDetailsToggle, #tourPlayButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1959,29 +1960,74 @@ github-repo-modal {
   cursor: pointer;
   transition: background-color 0.3s;
 }
-#localView:hover, #aeTeamIconTrigger:hover, #introDetailsToggle:hover {
+#changeView:hover, #aeTeamIconTrigger:hover, #introDetailsToggle:hover {
   background: #e5e5e5;
   color: #666;
 }
-#localView .material-icons, #aeTeamIconTrigger .material-icons, #introDetailsToggle .material-icons, #tourPlayButton .material-icons {
+#changeView .material-icons, #aeTeamIconTrigger .material-icons, #introDetailsToggle .material-icons, #tourPlayButton .material-icons {
   font-size: 18px;
   line-height: 1;
   user-select: none;
 }
-.dark #localView, .dark #aeTeamIconTrigger, .dark #introDetailsToggle {
+.dark #changeView, .dark #aeTeamIconTrigger, .dark #introDetailsToggle {
   background: #3a3a3a;
   border-color: #555;
   color: #888;
 }
-.dark #localView:hover, .dark #aeTeamIconTrigger:hover, .dark #introDetailsToggle:hover {
+.dark #changeView:hover, .dark #aeTeamIconTrigger:hover, .dark #introDetailsToggle:hover {
   background: #4a4a4a;
   color: #aaa;
 }
 
-/* #localView on — beats localsite's ".local{display:inline-block !important}" on localhost */
+/* Local-Only off (#changeViewMenu) — beats localsite's ".local{display:inline-block !important}" on localhost */
 body.hideLocalView .local,
 body.hideLocalView .localonly {
   display: none !important;
+}
+
+/* #changeViewMenu: a row per toggle, its name left of a switch (.switch and .slider from localsite/css/base.css, smaller here) */
+.change-view-menu {
+  min-width: 190px;
+}
+.change-view-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.change-view-toggle[hidden] {
+  display: none;
+}
+.change-view-toggle + .change-view-toggle {
+  margin-top: 3px;
+}
+.change-view-toggle:hover {
+  background: #f1f5f9;
+}
+.dark .change-view-toggle:hover {
+  background: #363636;
+}
+.change-view-menu .switch {
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+}
+.change-view-menu .slider:before {
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+.change-view-menu input:checked + .slider:before {
+  transform: translateX(16px);
+}
+.change-view-menu input:focus-visible + .slider {
+  outline: 2px solid #2196F3;
+  outline-offset: 2px;
 }
 
 /* Map moved above My Content by team/js/map.js */
