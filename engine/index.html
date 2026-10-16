@@ -563,93 +563,94 @@ function setupTeamMenuIn(wrapId) {
 </head>
 
 <body>
-<div id="engineContent" class="content contentpadding" style="max-width:1600px">
-
-  <!-- Page header — content populated from config.yaml, inline fallback shown instantly. Hidden in print layouts. -->
-  <div id="aeHeader" style="margin-bottom:24px">
-    <div class="ae-title-row">
-      <!-- Clicking the title (text or icon) opens #aeModeMenu -->
-      <div class="ae-mode-wrap ae-title-wrap" id="aeModeWrap">
-        <h1 style="margin:0; font-size:1.8rem" id="ae-title" title="Choose engine">
-          <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project <span class="darktext">Engine</span>
-        </h1>
-        <!-- Down arrow commented out. The button stays, hidden: the title's click opens the menu through it (setupEngineModeMenu). -->
-        <button type="button" class="ae-mode-trigger ae-title-arrow" id="aeModeTrigger" aria-haspopup="menu" aria-expanded="false" title="Choose engine" style="display:none">
-          <!-- <span class="material-icons">expand_more</span> -->
-        </button>
-        <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
-      </div>
-      <!-- Upper right, in display order: Create Team, the map print/download icons (team/js/map.js inserts them
-           before the data-after-print-icons element), then #changeView, #introDetailsToggle and #tourPlayButton -->
-      <div class="ae-upper-right">
-        <div id="upperRightIcons">
-          <!-- Create Team menu — localhost only. Under 750px wide, #aeTeamIconTrigger replaces #aeTeamTrigger. -->
-          <div class="ae-mode-wrap local" id="aeTeamWrap" style="display:none">
-            <button type="button" class="ae-mode-trigger" id="aeTeamTrigger" aria-haspopup="menu" aria-expanded="false" title="Create Team">
-              <span class="material-icons" style="font-size:18px;margin-right:4px">group_add</span><span>Create Team</span><span class="material-icons">expand_more</span>
-            </button>
-            <button type="button" id="aeTeamIconTrigger" aria-haspopup="menu" title="Create Team" onclick="document.getElementById('aeTeamTrigger').click()">
-              <span class="material-icons">person_add</span>
-            </button>
-            <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
+<!-- Page header — content populated from config.yaml, inline fallback shown instantly. Hidden in print layouts.
+     Before #engineContent, so it can span the full width while a map is in Full Screen (css/app.css). -->
+<div id="aeHeader" class="content">
+  <div class="ae-title-row">
+    <!-- Clicking the title (text or icon) opens #aeModeMenu -->
+    <div class="ae-mode-wrap ae-title-wrap" id="aeModeWrap">
+      <h1 style="margin:0; font-size:1.8rem" id="ae-title" title="Choose engine">
+        <span class="material-icons" style="vertical-align:middle;margin-right:8px;color:#4a90e2">tips_and_updates</span>Project <span class="darktext">Engine</span>
+      </h1>
+      <!-- Down arrow commented out. The button stays, hidden: the title's click opens the menu through it (setupEngineModeMenu). -->
+      <button type="button" class="ae-mode-trigger ae-title-arrow" id="aeModeTrigger" aria-haspopup="menu" aria-expanded="false" title="Choose engine" style="display:none">
+        <!-- <span class="material-icons">expand_more</span> -->
+      </button>
+      <div class="ae-mode-menu" id="aeModeMenu" role="menu" hidden></div>
+    </div>
+    <!-- Upper right, in display order: Create Team, the map print/download icons (team/js/map.js inserts them
+         before the data-after-print-icons element), then #changeView, #introDetailsToggle and #tourPlayButton -->
+    <div class="ae-upper-right">
+      <div id="upperRightIcons">
+        <!-- Create Team menu — localhost only. Under 750px wide, #aeTeamIconTrigger replaces #aeTeamTrigger. -->
+        <div class="ae-mode-wrap local" id="aeTeamWrap" style="display:none">
+          <button type="button" class="ae-mode-trigger" id="aeTeamTrigger" aria-haspopup="menu" aria-expanded="false" title="Create Team">
+            <span class="material-icons" style="font-size:18px;margin-right:4px">group_add</span><span>Create Team</span><span class="material-icons">expand_more</span>
+          </button>
+          <button type="button" id="aeTeamIconTrigger" aria-haspopup="menu" title="Create Team" onclick="document.getElementById('aeTeamTrigger').click()">
+            <span class="material-icons">person_add</span>
+          </button>
+          <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
+        </div>
+        <!-- Change view: Local-Only (localhost or ?view=local) and My Layout toggles -->
+        <div class="ae-mode-wrap" id="changeViewWrap" data-after-print-icons>
+          <button type="button" id="changeView" title="Change view" aria-haspopup="true" aria-expanded="false" aria-controls="changeViewMenu">
+            <span class="material-icons">visibility</span>
+          </button>
+          <div class="ae-mode-menu change-view-menu" id="changeViewMenu" hidden>
+            <label class="change-view-toggle" id="localOnlyToggleRow" hidden>
+              <span class="change-view-name">Local-Only</span>
+              <span class="switch"><input type="checkbox" id="localOnlyToggle" checked><span class="slider round"></span></span>
+            </label>
+            <label class="change-view-toggle">
+              <span class="change-view-name">My Layout</span>
+              <span class="switch"><input type="checkbox" id="myLayoutToggle" checked><span class="slider round"></span></span>
+            </label>
           </div>
-          <!-- Change view: Local-Only (localhost or ?view=local) and My Layout toggles -->
-          <div class="ae-mode-wrap" id="changeViewWrap" data-after-print-icons>
-            <button type="button" id="changeView" title="Change view" aria-haspopup="true" aria-expanded="false" aria-controls="changeViewMenu">
-              <span class="material-icons">visibility</span>
-            </button>
-            <div class="ae-mode-menu change-view-menu" id="changeViewMenu" hidden>
-              <label class="change-view-toggle" id="localOnlyToggleRow" hidden>
-                <span class="change-view-name">Local-Only</span>
-                <span class="switch"><input type="checkbox" id="localOnlyToggle" checked><span class="slider round"></span></span>
-              </label>
-              <label class="change-view-toggle">
-                <span class="change-view-name">My Layout</span>
-                <span class="switch"><input type="checkbox" id="myLayoutToggle" checked><span class="slider round"></span></span>
-              </label>
-            </div>
-          </div>
-          <!-- Details toggle — localhost only (.local, shown by localsite.js) -->
-          <div class="local" style="display:none">
-            <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
-              <span class="material-icons">info</span>
-            </button>
-          </div>
-          <!-- Tour play/pause, rightmost. Shares "Start Tour" (syncTourPlayButtons in localsite.js).
-               Starting the tour here also puts the browser and the detail map in Full Screen (setupTourPlayFullScreen in js/app.js),
-               and data-tour-hash adds detailfull=true to the hash with the tour's first stop, so a reload returns to Full Screen. -->
-          <button type="button" id="tourPlayButton" class="tour-play-button" data-tour-panel="locationDetails" data-tour-hash="detailfull=true" title="Start Tour" aria-pressed="false">
-            <span class="material-icons">play_arrow</span>
+        </div>
+        <!-- Details toggle — localhost only (.local, shown by localsite.js) -->
+        <div class="local" style="display:none">
+          <button type="button" id="introDetailsToggle" title="Show details" aria-pressed="false" aria-controls="introDetails" onclick="toggleIntroDetails()">
+            <span class="material-icons">info</span>
           </button>
         </div>
+        <!-- Tour play/pause, rightmost. Shares "Start Tour" (syncTourPlayButtons in localsite.js).
+             Starting the tour here also puts the browser and the detail map in Full Screen (setupTourPlayFullScreen in js/app.js),
+             and data-tour-hash adds detailfull=true to the hash with the tour's first stop, so a reload returns to Full Screen. -->
+        <button type="button" id="tourPlayButton" class="tour-play-button" data-tour-panel="locationDetails" data-tour-hash="detailfull=true" title="Start Tour" aria-pressed="false">
+          <span class="material-icons">play_arrow</span>
+        </button>
       </div>
     </div>
-    <!-- Subtitle, API link and backend status — hidden until #introDetailsToggle is clicked -->
-    <div id="introDetails" hidden>
-    <span style="margin:0; color:#888; font-size:0.95rem" id="ae-subtitle">
-      <!-- <a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map"><img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a> -->
-      Text, image &amp; video generation for projects via Model Context Protocol (MCP) <!-- · Storyboard Builder -->
-    </span>
-    - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
-
-    <!-- Backend intro — shown only when #mode= includes art -->
-    <div id="artIntro" class="ae-arts-only" style="display:none">
-      <div class="ae-backend-status" style="margin-top:8px">
-        <!-- Backend status text — localhost only (.local, shown by localsite.js) -->
-        <div class="local" style="display:none">
-          <span style="font-size:0.95rem;color:#888;">
-            <span id="backendLabel">Checking backend on port 8082…</span>
-            <!-- Start instruction, folded behind "more". app.js hides this span when the backend is online. -->
-            <span id="backendStartInstruction">
-              <a href="#" id="backendStartMore" onclick="event.preventDefault();toggleBackendStartDetail()">more</a>
-              <span id="backendStartDetail" hidden><span id="backendOfflineNote"></span> <a href="#" id="backendStartLess" onclick="event.preventDefault();toggleBackendStartDetail()">less</a></span>
-            </span>
-          </span>
-        </div>
-      </div>
-    </div>
-    </div><!-- /introDetails -->
   </div>
+  <!-- Subtitle, API link and backend status — hidden until #introDetailsToggle is clicked -->
+  <div id="introDetails" hidden>
+  <span style="margin:0; color:#888; font-size:0.95rem" id="ae-subtitle">
+    <!-- <a class="ae-subtitle-image" href="../../display/img/map/atlanta.png" target="_blank" rel="noopener" title="Atlanta, Georgia map"><img src="../../display/img/map/atlanta.png" alt="Illustrated map of Atlanta, Georgia with MARTA stations" loading="lazy"></a> -->
+    Text, image &amp; video generation for projects via Model Context Protocol (MCP) <!-- · Storyboard Builder -->
+  </span>
+  - <a href='rust-api/src/providers'>API Provider Architecture</a><br>
+
+  <!-- Backend intro — shown only when #mode= includes art -->
+  <div id="artIntro" class="ae-arts-only" style="display:none">
+    <div class="ae-backend-status" style="margin-top:8px">
+      <!-- Backend status text — localhost only (.local, shown by localsite.js) -->
+      <div class="local" style="display:none">
+        <span style="font-size:0.95rem;color:#888;">
+          <span id="backendLabel">Checking backend on port 8082…</span>
+          <!-- Start instruction, folded behind "more". app.js hides this span when the backend is online. -->
+          <span id="backendStartInstruction">
+            <a href="#" id="backendStartMore" onclick="event.preventDefault();toggleBackendStartDetail()">more</a>
+            <span id="backendStartDetail" hidden><span id="backendOfflineNote"></span> <a href="#" id="backendStartLess" onclick="event.preventDefault();toggleBackendStartDetail()">less</a></span>
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+  </div><!-- /introDetails -->
+</div>
+
+<div id="engineContent" class="content contentpadding" style="max-width:1600px">
 
   <!-- Main layout: 65% left / 35% right -->
   <div class="ae-container">

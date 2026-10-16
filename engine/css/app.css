@@ -6,9 +6,20 @@
    Title row — engine mode menu (Project, Arts, Activities, Design) at far right
    ========================================================= */
 
-/* Full Screen map (body.map-fullscreen-active, set by toggleMapScreen in team/js/map.js):
-   less space above the page content than .contentpadding's 25px */
-body.map-fullscreen-active #engineContent {
+/* Page header, just before #engineContent: the same width and side padding as #engineContent
+   (.contentpadding, max-width 1600px), and the top padding moves here from it */
+#aeHeader {
+  max-width: 1600px;
+  padding: 25px 30px 0;
+  margin-bottom: 24px;
+}
+#engineContent {
+  padding-top: 0;
+}
+/* Full Screen map (body.map-fullscreen-active, set by toggleMapScreen in team/js/map.js): the header spans
+   the full width, with less space above it than the usual 25px */
+body.map-fullscreen-active #aeHeader {
+  max-width: none;
   padding-top: 20px;
 }
 
