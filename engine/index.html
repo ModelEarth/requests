@@ -264,7 +264,7 @@ function applyLocationDetail() {
 document.addEventListener('hashChangeEvent', applyLocationDetail, false);
 document.addEventListener('DOMContentLoaded', applyLocationDetail);
 
-// #changeView — opens #changeViewMenu with three toggles and two tour menus:
+// #changeView — opens #changeViewMenu with three toggles and three tour menus:
 //   Local-Only: shows or hides .local and .localonly elements (overrides localsite's localhost !important rule).
 //     Listed only where localsite reveals .local elements: localhost or ?view=local.
 //   My Layout: the floating image and location details go where they were last dropped, or to their
@@ -275,6 +275,8 @@ document.addEventListener('DOMContentLoaded', applyLocationDetail);
 //     localStorage tourSpeed, 0.5 by default). Takes effect from the next stop.
 //   Per Location: how long the tour stays at each location, or All Images (the default) to stay while its
 //     gallery shows each image (tourPerLocation in localsite/js/localsite.js, localStorage tourPerLocation).
+//   Tour Motion: Smoother (the default) zooms and pans the map one at a time between locations, Zoom and Pan
+//     does both at once (tourMotionSmoother in team/js/map.js, localStorage tourMotion).
 // The eye shows the Local-Only state: crossed out while local-only items are hidden.
 function applyLocalView(hidden) {
   document.body.classList.toggle('hideLocalView', hidden);
@@ -331,6 +333,17 @@ onElmReady('#changeView', (btn) => {
   perLocationSelect.addEventListener('change', () => {
     try { localStorage.setItem('tourPerLocation', perLocationSelect.value); } catch (e) {}
   });
+
+  const motionSelect = document.getElementById('tourMotionSelect');
+  const showMotion = () => {
+    let value = null;
+    try { value = localStorage.getItem('tourMotion'); } catch (e) {}
+    motionSelect.value = value === 'zoompan' ? 'zoompan' : 'smoother';
+  };
+  showMotion();
+  motionSelect.addEventListener('change', () => {
+    try { localStorage.setItem('tourMotion', motionSelect.value); } catch (e) {}
+  });
   // Dropping a panel turns My Layout on (team/js/map.js)
   document.addEventListener('mylayoutchange', (event) => {
     if (event.detail && event.detail.source === 'drag') layoutToggle.checked = Boolean(event.detail.on);
@@ -344,6 +357,7 @@ onElmReady('#changeView', (btn) => {
     layoutToggle.checked = myLayoutOn();
     showSpeed();
     showPerLocation();
+    showMotion();
     setOpen(menu.hidden);
   });
   document.addEventListener('click', (event) => {
@@ -622,7 +636,7 @@ function setupTeamMenuIn(wrapId) {
           </button>
           <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
         </div>
-        <!-- Change view: Local-Only (localhost or ?view=local), My Layout and Preload Zoom toggles, Tour Speed and Per Location -->
+        <!-- Change view: Local-Only (localhost or ?view=local), My Layout and Preload Zoom toggles, Tour Speed, Per Location and Tour Motion -->
         <div class="ae-mode-wrap" id="changeViewWrap" data-after-print-icons>
           <button type="button" id="changeView" title="Change view" aria-haspopup="true" aria-expanded="false" aria-controls="changeViewMenu">
             <span class="material-icons">visibility</span>
@@ -659,6 +673,13 @@ function setupTeamMenuIn(wrapId) {
                 <option value="30">30 seconds</option>
                 <option value="60">1 minute</option>
                 <option value="images" selected>All Images</option>
+              </select>
+            </label>
+            <label class="change-view-toggle" title="How the map moves between locations">
+              <span class="change-view-name">Tour Motion</span>
+              <select id="tourMotionSelect" class="change-view-select">
+                <option value="smoother" selected>Smoother</option>
+                <option value="zoompan">Zoom and Pan</option>
               </select>
             </label>
           </div>
