@@ -264,11 +264,17 @@ function applyLocationDetail() {
 document.addEventListener('hashChangeEvent', applyLocationDetail, false);
 document.addEventListener('DOMContentLoaded', applyLocationDetail);
 
-// #changeView — opens #changeViewMenu with two toggles:
+// #changeView — opens #changeViewMenu with three toggles and two tour menus:
 //   Local-Only: shows or hides .local and .localonly elements (overrides localsite's localhost !important rule).
 //     Listed only where localsite reveals .local elements: localhost or ?view=local.
 //   My Layout: the floating image and location details go where they were last dropped, or to their
 //     default spots when off (myLayoutOn and "mylayoutchange" in team/js/map.js, localStorage mapMyLayout).
+//   Preload Zoom: a Full Screen map loads the new view's tiles before zooming, so the zoom looks smooth
+//     (preloadZoomOn and enableZoomPreload in team/js/map.js, localStorage mapPreloadZoom, on unless "0").
+//   Tour Speed: the pace of Start Tour, as a multiple of the original (tourSpeed in localsite/js/localsite.js,
+//     localStorage tourSpeed, 0.5 by default). Takes effect from the next stop.
+//   Per Location: how long the tour stays at each location, or All Images (the default) to stay while its
+//     gallery shows each image (tourPerLocation in localsite/js/localsite.js, localStorage tourPerLocation).
 // The eye shows the Local-Only state: crossed out while local-only items are hidden.
 function applyLocalView(hidden) {
   document.body.classList.toggle('hideLocalView', hidden);
@@ -280,10 +286,14 @@ function applyLocalView(hidden) {
 function myLayoutOn() {
   try { return localStorage.getItem('mapMyLayout') !== '0'; } catch (e) { return true; }
 }
+function preloadZoomOn() {
+  try { return localStorage.getItem('mapPreloadZoom') !== '0'; } catch (e) { return true; }
+}
 onElmReady('#changeView', (btn) => {
   const menu = document.getElementById('changeViewMenu');
   const localToggle = document.getElementById('localOnlyToggle');
   const layoutToggle = document.getElementById('myLayoutToggle');
+  const preloadToggle = document.getElementById('preloadZoomToggle');
 
   const localShown = location.host.indexOf('localhost') >= 0 || (window.param && param.view == 'local');
   document.getElementById('localOnlyToggleRow').hidden = !localShown;
@@ -303,6 +313,24 @@ onElmReady('#changeView', (btn) => {
     try { localStorage.setItem('mapMyLayout', layoutToggle.checked ? '1' : '0'); } catch (e) {}
     document.dispatchEvent(new CustomEvent('mylayoutchange', { detail: { on: layoutToggle.checked, source: 'toggle' } }));
   });
+  preloadToggle.checked = preloadZoomOn();
+  preloadToggle.addEventListener('change', () => {
+    try { localStorage.setItem('mapPreloadZoom', preloadToggle.checked ? '1' : '0'); } catch (e) {}
+  });
+
+  const speedSelect = document.getElementById('tourSpeedSelect');
+  const showSpeed = () => { if (typeof tourSpeed === 'function') speedSelect.value = String(tourSpeed()); };
+  showSpeed();
+  speedSelect.addEventListener('change', () => {
+    try { localStorage.setItem('tourSpeed', speedSelect.value); } catch (e) {}
+  });
+
+  const perLocationSelect = document.getElementById('tourPerLocationSelect');
+  const showPerLocation = () => { if (typeof tourPerLocation === 'function') perLocationSelect.value = tourPerLocation(); };
+  showPerLocation();
+  perLocationSelect.addEventListener('change', () => {
+    try { localStorage.setItem('tourPerLocation', perLocationSelect.value); } catch (e) {}
+  });
   // Dropping a panel turns My Layout on (team/js/map.js)
   document.addEventListener('mylayoutchange', (event) => {
     if (event.detail && event.detail.source === 'drag') layoutToggle.checked = Boolean(event.detail.on);
@@ -314,6 +342,8 @@ onElmReady('#changeView', (btn) => {
   };
   btn.addEventListener('click', () => {
     layoutToggle.checked = myLayoutOn();
+    showSpeed();
+    showPerLocation();
     setOpen(menu.hidden);
   });
   document.addEventListener('click', (event) => {
@@ -592,7 +622,7 @@ function setupTeamMenuIn(wrapId) {
           </button>
           <div class="ae-mode-menu" id="aeTeamMenu" role="menu" hidden></div>
         </div>
-        <!-- Change view: Local-Only (localhost or ?view=local) and My Layout toggles -->
+        <!-- Change view: Local-Only (localhost or ?view=local), My Layout and Preload Zoom toggles, Tour Speed and Per Location -->
         <div class="ae-mode-wrap" id="changeViewWrap" data-after-print-icons>
           <button type="button" id="changeView" title="Change view" aria-haspopup="true" aria-expanded="false" aria-controls="changeViewMenu">
             <span class="material-icons">visibility</span>
@@ -605,6 +635,31 @@ function setupTeamMenuIn(wrapId) {
             <label class="change-view-toggle">
               <span class="change-view-name">My Layout</span>
               <span class="switch"><input type="checkbox" id="myLayoutToggle" checked><span class="slider round"></span></span>
+            </label>
+            <label class="change-view-toggle" title="In Full Screen, load the map tiles before zooming">
+              <span class="change-view-name">Preload Zoom</span>
+              <span class="switch"><input type="checkbox" id="preloadZoomToggle" checked><span class="slider round"></span></span>
+            </label>
+            <label class="change-view-toggle" title="Pace of Start Tour, compared to the original">
+              <span class="change-view-name">Tour Speed</span>
+              <select id="tourSpeedSelect" class="change-view-select">
+                <option value="0.25">0.25×</option>
+                <option value="0.5" selected>0.5×</option>
+                <option value="0.75">0.75×</option>
+                <option value="1">1×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+              </select>
+            </label>
+            <label class="change-view-toggle" title="How long the tour stays at each location">
+              <span class="change-view-name">Per Location</span>
+              <select id="tourPerLocationSelect" class="change-view-select">
+                <option value="12">12 seconds</option>
+                <option value="20">20 seconds</option>
+                <option value="30">30 seconds</option>
+                <option value="60">1 minute</option>
+                <option value="images" selected>All Images</option>
+              </select>
             </label>
           </div>
         </div>

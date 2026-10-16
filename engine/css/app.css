@@ -1998,7 +1998,10 @@ body.hideLocalView .localonly {
 
 /* #changeViewMenu: a row per toggle, its name left of a switch (.switch and .slider from localsite/css/base.css, smaller here) */
 .change-view-menu {
-  min-width: 190px;
+  min-width: 220px;
+}
+.change-view-name {
+  white-space: nowrap;
 }
 .change-view-toggle {
   display: flex;
@@ -2039,6 +2042,26 @@ body.hideLocalView .localonly {
 .change-view-menu input:focus-visible + .slider {
   outline: 2px solid #2196F3;
   outline-offset: 2px;
+}
+/* Tour Speed menu, in place of a switch */
+.change-view-select {
+  flex-shrink: 0;
+  padding: 3px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  font-size: 13px;
+  cursor: pointer;
+}
+.change-view-select:focus-visible {
+  outline: 2px solid #2196F3;
+  outline-offset: 2px;
+}
+.dark .change-view-select {
+  border-color: #4b5563;
+  background: #2a2a2a;
+  color: #e5e7eb;
 }
 
 /* Map moved above My Content by team/js/map.js */
