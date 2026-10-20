@@ -1,9 +1,9 @@
 <b>Our Favorite Dev&nbsp;Tools</b>
-<a href="https://deepmind.google/models/veo/">Veo,</a>  <a href="https://labs.google/fx/tools/flow">Google Flow</a> <a href="https://firebase.studio">and Firebase</a>
+<a href="https://midjourney.com">Midjourney</a>, <a href="https://claude.com/product/claude-code">Claude</a>, <a href="https://x.ai/bot">GrokBot</a>
+<a href="https://cursor.com/">Cursor</a>, <a href="https://warp.dev/">Warp</a>, <a href="https://chatgpt.com/codex/get-started">OpenAI Codex</a>
+<a href="https://deepmind.google/models/veo/">Veo,</a>  <a href="https://labs.google/fx/tools/flow">Google Flow</a>, <a href="https://firebase.studio">Firebase Studio</a>
 <a href="https://hailuoai.video">Hailo</a>, <a href="https://klingai.com">Kling</a>, <a href="https://seedance2ai.io/">Seedance Video</a>
-<a href="https://claude.com/product/claude-code">Claude</a>, <a href="https://cursor.com/">Cursor</a>, <a href="https://chatgpt.com/codex/get-started">OpenAI Codex</a>
 <a href="https://mastra.ai/">Mastra AI Agents Typescript</a>
-<a href="https://midjourney.com">Midjourney</a> <a href="https://grokcom">and GrokAI</a>
 <a href="https://dreamstudio.stability.ai">StabilityAI Dreamstudio</a>
 <a href="https://magnific.ai/">Magnific Upscaler</a>
 <a href="https://lumalabs.ai/dream-machine">Luma Dream Machine</a>
