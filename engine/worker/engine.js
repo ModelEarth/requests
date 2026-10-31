@@ -376,11 +376,11 @@ function openAICompatProvider(name, apiKey, { baseUrl, textModel = "gpt-4o-mini"
 // Anthropic: `system` is a top-level string, max_tokens is required, every
 // request carries anthropic-version, and the text is at content[].text.
 function claudeProvider(apiKey) {
-  const defaultModel = "claude-sonnet-4-6";
+  const defaultModel = "claude-opus-5-5";
   return {
     name: "anthropic",
     async listModels() {
-      return ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"].map((id) => ({
+      return ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1"].map((id) => ({
         id,
         owned_by: "anthropic",
         created: 0,

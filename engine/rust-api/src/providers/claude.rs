@@ -27,7 +27,7 @@ impl ClaudeProvider {
         Self {
             api_key,
             http_client: reqwest::Client::new(),
-            default_model: "claude-sonnet-4-6".to_string(),
+            default_model: "claude-opus-5-5".to_string(),
         }
     }
 
@@ -59,9 +59,10 @@ impl GenerativeModel for ClaudeProvider {
 
     async fn list_models(&self) -> anyhow::Result<Vec<ModelSummary>> {
         Ok(vec![
-            ModelSummary { id: "claude-opus-4-6".to_string(),           owned_by: "anthropic".to_string(), created: 0 },
-            ModelSummary { id: "claude-sonnet-4-6".to_string(),         owned_by: "anthropic".to_string(), created: 0 },
-            ModelSummary { id: "claude-haiku-4-5-20251001".to_string(), owned_by: "anthropic".to_string(), created: 0 },
+            ModelSummary { id: "claude-opus-5-5".to_string(),   owned_by: "anthropic".to_string(), created: 0 },
+            ModelSummary { id: "claude-sonnet-5-5".to_string(), owned_by: "anthropic".to_string(), created: 0 },
+            ModelSummary { id: "claude-haiku-5-5".to_string(),  owned_by: "anthropic".to_string(), created: 0 },
+            ModelSummary { id: "claude-fable-5-1".to_string(),  owned_by: "anthropic".to_string(), created: 0 },
         ])
     }
 

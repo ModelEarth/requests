@@ -40,7 +40,7 @@ Provider names are the values matched by `build_provider_dynamic` (the `X-Provid
 | `perplexity`  | `https://api.perplexity.ai` | `llama-3.1-sonar-large-128k-online` |
 | `deepseek`    | `https://api.deepseek.com` | `deepseek-chat` |
 | `pollinations` | `https://gen.pollinations.ai` | *(image only: `flux`)* |
-| `anthropic`   | *(own file `claude.rs` — see below)* | `claude-sonnet-4-6` |
+| `anthropic`   | *(own file `claude.rs` — see below)* | `claude-opus-5-5` |
 | `google`      | *(own file `gemini.rs` — see below)* | `gemini-2.5-flash` |
 | `xai`         | *(own crate — see below)* | `grok-3-mini-beta` |
 

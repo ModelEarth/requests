@@ -13,6 +13,9 @@
  */
 
 class ArtsEngine {
+  // The backend's .env provider, from /api/health (e.g. 'anthropic' when GEN_MODEL_PROVIDER=anthropic).
+  static envProvider = '';
+
   constructor() {
     this.apiBase = (window.AE_API_BASE || 'http://localhost:8091') + '/api';
     this.scenes = [];         // Array of {scene, prompt, industry, naics, count, image, text}
@@ -934,8 +937,8 @@ class ArtsEngine {
         noCreditsHint: m.noCreditsHint, // message shown when the account has no credits
       }));
     }
-    // 'env' = backend .env provider; mirror xai models as default
-    result.env = (result.xai || []).map(m => ({ ...m, label: m.label + ' (default)' }));
+    // 'env' = backend .env provider; mirror its models (xai until /api/health names it)
+    result.env = (result[ArtsEngine.envProvider] || result.xai || []).map(m => ({ ...m, label: m.label + ' (default)' }));
     if (!result.env.length) result.env = [{ value: 'grok-3', label: 'Grok 3 (default)', outputs: ['text', 'image', 'video'] }];
     return result;
   }
@@ -1655,6 +1658,10 @@ class ArtsEngine {
         };
         if (data.provider) {
           this._healthProvider = data.provider;
+          if (ArtsEngine.envProvider !== data.provider) {
+            ArtsEngine.envProvider = data.provider;
+            if (this.prefs.provider === 'env') this._syncModelPref();
+          }
           this._envProviderLabel = (LABELS[data.provider] || data.provider) + ' (.env)';
         }
         // Track which providers have .env keys so the trigger can show them
