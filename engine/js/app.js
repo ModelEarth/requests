@@ -1199,7 +1199,7 @@ class ArtsEngine {
   getActiveProvider() {
     const providerId = this.prefs.provider;
     if (!providerId || providerId === 'env') return null; // use backend .env
-    const key = window.KeyManager?.get(providerId) || null;
+    const key = window.KeyManager?.forServer?.(providerId) || window.KeyManager?.get(providerId) || null;
     return key ? { provider: providerId, key } : null;
   }
 

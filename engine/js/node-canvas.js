@@ -1297,7 +1297,9 @@
     // ---- generation -------------------------------------------------------
     _providerHeaders(node) {
       if (!node.provider || node.provider === "env") return {};
-      const key = window.KeyManager?.get(node.provider);
+      const key =
+        window.KeyManager?.forServer?.(node.provider) ||
+        window.KeyManager?.get(node.provider);
       return key
         ? { "X-Provider-Name": node.provider, "X-Provider-Key": key }
         : {};
